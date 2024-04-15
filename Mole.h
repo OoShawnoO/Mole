@@ -7,22 +7,30 @@
   ******************************************************************************
   */
 
-#ifndef MOLE_MOLE_H
-#define MOLE_MOLE_H
+#ifndef MOLE_H
+#define MOLE_H
 
-#include <deque>
 #include <condition_variable>
 #include <unordered_map>
 #include <vector>
+#include <deque>
 #include <thread>
 
 namespace hzd {
+#ifdef _WIN32
+    using ssize_t = long long int;
+    using int8_t = char;
+    using int16_t = short;
+    using int32_t = int;
+    using int64_t = long long int;
+#endif
+#define CACHE_BUF_SIZE 409600
     // 信号量
     class Semaphore {
     public:
         // 构造函数
         // 传入参数 count 表示初始信号量数量
-        explicit Semaphore(size_t count = 0);
+        explicit Semaphore(ssize_t count = 0);
         // 析构函数
         ~Semaphore();
         // V操作
@@ -35,7 +43,7 @@ namespace hzd {
         // 如果 count <= 0 阻塞 否则 --count
         void Wait();
     private:
-        size_t                  count;
+        ssize_t                  count;
         std::mutex              mutex;
         std::condition_variable cv;
     };
@@ -56,7 +64,8 @@ namespace hzd {
         Channel(Channel&& channel)  noexcept {
             container = std::move(channel.container);
             mutex = std::move(channel.mutex);
-            shared_ptr_semaphore = std::move(channel.shared_ptr_semaphore);
+            shared_ptr_semaphore = channel.shared_ptr_semaphore;
+
             is_block = channel.is_block;
             capacity = channel.capacity;
         }
@@ -118,7 +127,135 @@ namespace hzd {
         std::mutex mutex;
         std::shared_ptr<Semaphore> shared_ptr_semaphore;
     };
-#define STR(x) #x
+    // 解释方法
+    template<class T>
+    inline std::string DescriptionType(T&) { return std::string(typeid(T).name()); }
+    template<class T>
+    inline std::string DescriptionType(const T&) { return std::string(typeid(T).name()); }
+    template<class T>
+    inline std::string DescriptionValue(T&) { return {};}
+    template<class T>
+    inline std::string DescriptionValue(const T&) { return {};}
+    template<class K,class V>
+    inline std::string DescriptionType(std::pair<K,V>&) { return "std::pair"; }
+    template<class K,class V>
+    inline std::string DescriptionValue(std::pair<K,V>& var) { return "{" + DescriptionValue(std::forward<K&>(var.first)) + ":" + DescriptionValue(std::forward<V&>(var.second)) + "}";}
+
+    #define  DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(type)                          \
+    template<class T> inline std::string DescriptionValue(type<T>& var){                    \
+        std::string temp = "[";                                                             \
+        for(auto& iter : var) {                                                             \
+            temp += DescriptionValue(std::forward<decltype(iter)&>(iter)) += ",";           \
+        }                                                                                   \
+        temp += "]";                                                                        \
+        return temp;                                                                        \
+    }
+    #define DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(type)                            \
+    template<class T> inline std::string DescriptionType(type<T>&) { return #type; }        \
+    template<class T> inline std::string DescriptionType(const type<T>&) { return #type;}   \
+
+    #define  DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(type)                            \
+    template<class K,class V> inline std::string DescriptionValue(type<K,V>& var){          \
+        std::string temp = "{";                                                             \
+        for(auto& iter : var) {                                                             \
+            temp += DescriptionValue(std::forward<decltype(iter)&>(iter))+=",";             \
+        }                                                                                   \
+        temp += "}";                                                                        \
+        return temp;                                                                        \
+    }
+    #define DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(type) \
+    template<class K,class V> inline std::string DescriptionType(type<K,V>&) { return #type; } \
+    template<class K,class V> inline std::string DescriptionType(const type<K,V>&) { return #type; }
+
+    #define DESCRIPTION_NUMBER_VALUE(type) \
+    template<> inline std::string DescriptionValue(type& var) { return std::to_string(var); } \
+    template<> inline std::string DescriptionValue(const type& var) { return std::to_string(var); }
+    #define DESCRIPTION_NUMBER_TYPE(type) \
+    template<> inline std::string DescriptionType(type&) { return #type; }                     \
+    template<> inline std::string DescriptionType(const type&) { return #type; }
+
+    #define DESCRIPTION_STR_VALUE(type) \
+    template<> inline std::string DescriptionValue(type& var) { return var; }
+    #define DESCRIPTION_STR_TYPE(type) \
+    template<> inline std::string DescriptionType(type&) { return #type; }
+
+    // class 需要自定义的类型
+    // object 自定义类型对象
+    // return std::string 用于描述对象类型、值的字符串。
+    #define MOLE_SELF_DEFINE(class,object)                                                      \
+    template<> inline std::string hzd::DescriptionType(class&) { return #class; }               \
+    template<> inline std::string hzd::DescriptionType(const class&) { return #class; }         \
+    template<> inline std::string hzd::DescriptionValue(class& object)
+    /* basic number type type */
+    DESCRIPTION_NUMBER_TYPE(int8_t)
+    DESCRIPTION_NUMBER_TYPE(int16_t)
+    DESCRIPTION_NUMBER_TYPE(int32_t)
+    DESCRIPTION_NUMBER_TYPE(int64_t)
+    DESCRIPTION_NUMBER_TYPE(uint8_t)
+    DESCRIPTION_NUMBER_TYPE(uint16_t)
+    DESCRIPTION_NUMBER_TYPE(uint32_t)
+    DESCRIPTION_NUMBER_TYPE(uint64_t)
+    DESCRIPTION_NUMBER_TYPE(float)
+    DESCRIPTION_NUMBER_TYPE(double)
+    DESCRIPTION_NUMBER_TYPE(long double)
+    DESCRIPTION_STR_TYPE(const char*)
+    DESCRIPTION_STR_TYPE(char*)
+    /* basic number type value */
+    DESCRIPTION_NUMBER_VALUE(int8_t)
+    DESCRIPTION_NUMBER_VALUE(int16_t)
+    DESCRIPTION_NUMBER_VALUE(int32_t)
+    DESCRIPTION_NUMBER_VALUE(int64_t)
+    DESCRIPTION_NUMBER_VALUE(uint8_t)
+    DESCRIPTION_NUMBER_VALUE(uint16_t)
+    DESCRIPTION_NUMBER_VALUE(uint32_t)
+    DESCRIPTION_NUMBER_VALUE(uint64_t)
+    DESCRIPTION_NUMBER_VALUE(float)
+    DESCRIPTION_NUMBER_VALUE(double)
+    DESCRIPTION_NUMBER_VALUE(long double)
+    DESCRIPTION_STR_VALUE(const char*)
+    DESCRIPTION_STR_VALUE(char*)
+    /* STL value & type */
+    DESCRIPTION_STR_TYPE(std::string)
+    DESCRIPTION_STR_VALUE(std::string)
+
+#ifdef _STL_MAP_H
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::map)
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::map)
+#endif
+#ifdef _STL_MULTIMAP_H
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::multimap)
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::multimap)
+#endif
+#ifdef _STL_MULTISET_H
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::multiset)
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::multiset)
+#endif
+#ifdef _UNORDERED_MAP_H
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::unordered_map)
+    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::unordered_map)
+#endif
+#ifdef _STL_LIST_H
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::list)
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::list)
+#endif
+#ifdef _STL_VECTOR_H
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::vector)
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::vector)
+#endif
+#ifdef _STL_DEQUE_H
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::deque)
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::deque)
+#endif
+#ifdef _STL_SET_H
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::set)
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::set)
+#endif
+#ifdef _UNORDERED_SET_H
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::unordered_set)
+    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::unordered_set)
+#endif
+
+
     // 日志类
     class Mole {
     public:
@@ -129,17 +266,19 @@ namespace hzd {
                 TRACE,INFO,WARN,ERROR,FATAL
             };
             // 日志等级
-            LogLevel        level;
+            LogLevel                    level;
             // 日志内容
-            std::string     content;
+            std::string                 content;
             // 日志时间
-            time_t          time;
+            time_t                      time;
             // 发布日志行号
-            unsigned int    line;
+            unsigned int                line;
             // 发布日志文件位置
-            const char*     file_name;
+            const char*                 file_name;
             // 日志打包变量内容
-            std::string     variables;
+            std::string                 variables;
+            // 频道名
+            std::string                 channel_name;
         };
         // 日志频道
         class LogChannel {
@@ -149,131 +288,94 @@ namespace hzd {
             // 屏蔽日志等级
             LogItem::LogLevel   level{LogItem::TRACE};
             // 提交队列
-            Channel<LogItem>    commit_channel{true};
+            Channel<LogItem>&    commit_channel;
             // 日志文件指针
             FILE*               fp{nullptr};
-            // 日志项缓冲区
-            char                item_buffer[4096] = {0};
             // 日志写缓冲区
-            char                write_buffer[40960] = {0};
+            char                write_buffer[CACHE_BUF_SIZE] = {0};
             // 日志写游标
             size_t              write_cursor{0};
             // 日志频道是否保存
             bool                is_save{false};
+            // 日志频道是否终端输出
+            bool                is_show{true};
 
             // 设置日志频道是否保存
             void SetSaveable(bool is_save);
             // 设置日志屏蔽等级
             void SetLevel(LogItem::LogLevel level);
+            // 设置日志是否输出
+            void SetShowLog(bool is_show);
             // 构造函数
             // channel_name 频道名
-            explicit LogChannel(std::string  channel_name);
-
-#ifdef _WIN32
-    using int8_t = char;
-    using int16_t = short;
-    using int32_t = int;
-    using int64_t = long long;
-#endif
-
-            // 变量包
-            struct Variable {
-                const char* name{nullptr};
-                union data{
-                    int8_t int8_;
-                    int16_t int16_;
-                    int32_t int32_;
-                    int64_t int64_;
-                    uint8_t uint8_;
-                    uint16_t uint16_;
-                    uint32_t uint32_;
-                    uint64_t uint64_;
-                    double double_;
-                    long double ldouble_;
-                    float float_;
-                    char* charptr_;
-                    const char* constcharptr_;
-                } data{};
-                enum VariableType {
-                    INT8,INT16,INT32,INT64,
-                    UINT8,UINT16,UINT32,UINT64,
-                    FLOAT,DOUBLE,LONG_DOUBLE,
-                    CONST_CHAR_PTR,CHAR_PTR,
-                } type;
-                Variable(const char* n,int8_t v){ name = n;type = INT8; data.int8_ = v;};
-                Variable(const char* n,int16_t v){ name = n;type = INT16; data.int16_ = v; };
-                Variable(const char* n,int32_t v){ name = n;type = INT32; data.int32_ = v; };
-                Variable(const char* n,int64_t v){ name = n;type = INT64; data.int64_ = v; };
-                Variable(const char* n,uint8_t v){ name = n;type = UINT8; data.uint8_ = v; };
-                Variable(const char* n,uint16_t v){ name = n;type = UINT16; data.uint16_ = v; };
-                Variable(const char* n,uint32_t v){ name = n;type = UINT32; data.uint32_ = v; };
-                Variable(const char* n,uint64_t v){ name = n;type = UINT64; data.uint64_ = v; };
-                Variable(const char* n,float v){ name = n;type = FLOAT; data.float_ = v; };
-                Variable(const char* n,double v){ name = n;type = DOUBLE; data.double_ = v; };
-                Variable(const char* n,long double v){ name = n;type = LONG_DOUBLE; data.ldouble_ = v; };
-                Variable(const char* n,const char* v){ name = n;type = CONST_CHAR_PTR; data.constcharptr_ = v; };
-                Variable(const char* n,char* v){ name = n;type = CHAR_PTR; data.charptr_ = v; };
-
-                // 描述变量名称、类型与数值
-                [[nodiscard]] std::string Detail() const;
-            };
+            explicit LogChannel(std::string  channel_name,Channel<LogItem>& commit_channel);
+            ~LogChannel();
 
             // FATAL级别日志
             // content 日志内容
             // file_name 发布日志位置文件名
             // line 发布日志位置行号
             // variables 变量包
-            void Fatal(const char* content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
-            void Fatal(const std::string& content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
+            void Fatal(const char* content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
+            void Fatal(const std::string& content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
             // ERROR级别日志
             // content 日志内容
             // file_name 发布日志位置文件名
             // line 发布日志位置行号
             // variables 变量包
-            void Error(const char* content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
-            void Error(const std::string& content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
+            void Error(const char* content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
+            void Error(const std::string& content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
             // WARN级别日志
             // content 日志内容
             // file_name 发布日志位置文件名
             // line 发布日志位置行号
             // variables 变量包
-            void Warn(const char* content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
-            void Warn(const std::string& content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
+            void Warn(const char* content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
+            void Warn(const std::string& content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
             // INFO级别日志
             // content 日志内容
             // file_name 发布日志位置文件名
             // line 发布日志位置行号
             // variables 变量包
-            void Info(const char* content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
-            void Info(const std::string& content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
+            void Info(const char* content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
+            void Info(const std::string& content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
             // TRACE级别日志
             // content 日志内容
             // file_name 发布日志位置文件名
             // line 发布日志位置行号
             // variables 变量包
-            void Trace(const char* content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
-            void Trace(const std::string& content,const char* file_name,unsigned int line,const std::vector<Variable>& variables = {}) noexcept;
+            void Trace(const char* content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
+            void Trace(const std::string& content,const char* file_name,unsigned int line,const std::vector<std::string>& variables = {}) noexcept;
             // 写日志项
-            void __WriteLogItem(LogItem& item);
+            void WriteLogItem(LogItem& item);
         };
         // 获取日志频道
         static LogChannel& Channel(const std::string& channel_name = {});
         ~Mole();
         // 日志等级字符串哈希表
         const static std::unordered_map<std::string,LogItem::LogLevel>      level_str_map;
+        // 是否关闭日志
+        static bool                                                         is_disable;
     private:
         // 控制日志线程关闭标记
         static bool                                                         is_stop;
         // 日志频道哈希表
-        static std::unordered_map<std::string,std::shared_ptr<LogChannel>>  channel_map;
+        static std::unordered_map<std::string,std::shared_ptr<LogChannel>>  log_channel_map;
         // 日志线程组
-        static std::vector<std::thread>                                     thread_group;
+        static std::vector<
+            std::pair<
+                std::thread,
+                std::shared_ptr<hzd::Channel<LogItem>>
+            >
+        >                                                                   thread_group;
+        // 对应thread_group挂载Channel<LogItem>的次数
+        static std::vector<unsigned int>                                    commit_log_channel_count;
         // 日志等级哈希表
         const static std::unordered_map<LogItem::LogLevel,const char*>      level_map;
         // 日志等级颜色焊锡表
         const static std::unordered_map<LogItem::LogLevel,const char*>      color_scheme;
         // 日志循环
-        static void LogLoop(const std::shared_ptr<LogChannel>& log_channel);
+        static void LogLoop(const std::shared_ptr<hzd::Channel<LogItem>>& commit_channel);
     };
 
 #ifdef MOLE_CLOSE
@@ -286,64 +388,100 @@ namespace hzd {
 #define MOLE_CHANNEL_LEVEL(chan,level)
 #define MOLE_CHANNEL_SAVEABLE(chan,bool)
 #else
+#define MOLE_DISABLE(bool)                                                          \
+    do {                                                                            \
+        hzd::Mole::is_disable = bool;                                               \
+    }while(0)
     // FATAL级别日志
     // chan 日志频道名
     // content 日志内容
     // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
-#define MOLE_FATAL(chan,content,...)                                             \
-    do {                                                                      \
-        hzd::Mole::Channel(#chan).Fatal(content,__FILE__,__LINE__,##__VA_ARGS__);\
+#define MOLE_FATAL(chan,content,...)                                                    \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable){                                                     \
+            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            if(channel.level <= hzd::Mole::LogItem::LogLevel::FATAL){                   \
+                channel.Fatal(content,__FILE__,__LINE__,##__VA_ARGS__);                 \
+            }                                                                           \
+        }                                                                               \
     }while(0)
     // ERROR级别日志
     // chan 日志频道名
     // content 日志内容
     // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
-#define MOLE_ERROR(chan,content,...)                                          \
-    do {                                                                      \
-        hzd::Mole::Channel(#chan).Error(content,__FILE__,__LINE__,##__VA_ARGS__);\
+#define MOLE_ERROR(chan,content,...)                                                    \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable){                                                     \
+            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            if(channel.level <= hzd::Mole::LogItem::LogLevel::ERROR){                   \
+                channel.Error(content,__FILE__,__LINE__,##__VA_ARGS__);                 \
+            }                                                                           \
+        }                                                                               \
     }while(0)
     // WARN级别日志
     // chan 日志频道名
     // content 日志内容
     // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
-#define MOLE_WARN(chan,content,...)                                          \
-    do {                                                                      \
-        hzd::Mole::Channel(#chan).Warn(content,__FILE__,__LINE__,##__VA_ARGS__);\
+#define MOLE_WARN(chan,content,...)                                                     \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable){                                                     \
+            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            if(channel.level <= hzd::Mole::LogItem::LogLevel::WARN){                    \
+                channel.Warn(content,__FILE__,__LINE__,##__VA_ARGS__);                  \
+            }                                                                           \
+        }                                                                               \
     }while(0)
     // INFO级别日志
     // chan 日志频道名
     // content 日志内容
     // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
-#define MOLE_INFO(chan,content,...)                                          \
-    do {                                                                      \
-        hzd::Mole::Channel(#chan).Info(content,__FILE__,__LINE__,##__VA_ARGS__);\
+#define MOLE_INFO(chan,content,...)                                                     \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable){                                                     \
+            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            if(channel.level <= hzd::Mole::LogItem::LogLevel::INFO){                    \
+                channel.Info(content,__FILE__,__LINE__,##__VA_ARGS__);                  \
+            }                                                                           \
+        }                                                                               \
     }while(0)
     // TRACE级别日志
     // chan 日志频道名
     // content 日志内容
     // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
-#define MOLE_TRACE(chan,content,...)                                          \
-    do {                                                                      \
-        hzd::Mole::Channel(#chan).Trace(content,__FILE__,__LINE__,##__VA_ARGS__);\
+#define MOLE_TRACE(chan,content,...)                                                    \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable){                                                     \
+            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            if(channel.level <= hzd::Mole::LogItem::LogLevel::TRACE){                   \
+                channel.Trace(content,__FILE__,__LINE__,##__VA_ARGS__);                 \
+            }                                                                           \
+        }                                                                               \
     }while(0)
     // 隐式构造Variable
-#define MOLE_VAR(variable) {#variable,variable}
+#define MOLE_VAR(variable) (hzd::DescriptionType(std::forward<decltype(variable)&>(variable)) + " " + std::string(#variable) + "=" + hzd::DescriptionValue(std::forward<decltype(variable)&>(variable))+ "\n")
     // 设置日志频道最低等级
     // chan 日志频道名
     // level 等级字符串
-#define MOLE_CHANNEL_LEVEL(chan,level) \
-    do {                               \
-        hzd::Mole::Channel(#chan).SetLevel(hzd::Mole::level_str_map.at(level));        \
+#define MOLE_CHANNEL_LEVEL(chan,level)                                                  \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable)                                                      \
+            hzd::Mole::Channel(#chan).SetLevel(hzd::Mole::level_str_map.at(level));     \
     }while(0)
     // 设置日志频道是否保存日志文件
     // chan 日志频道名
     // bool true保存 false不保存
-#define MOLE_CHANNEL_SAVEABLE(chan,bool) \
-    do {                                 \
-        hzd::Mole::Channel(#chan).SetSaveable(bool);                                     \
+#define MOLE_CHANNEL_SAVEABLE(chan,bool)                                                \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable)                                                      \
+            hzd::Mole::Channel(#chan).SetSaveable(bool);                                \
     }while(0)
 
+#define MOLE_CHANNEL_SHOWLOG(chan,bool)                                                 \
+    do {                                                                                \
+        if(!hzd::Mole::is_disable)                                                      \
+            hzd::Mole::Channel(#chan).SetShowLog(bool);                                 \
+    }while(0)
 #endif
 } // hzd
 
-#endif //MOLE_MOLE_H
+#endif //MOLE_H
