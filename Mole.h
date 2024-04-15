@@ -128,19 +128,23 @@ namespace hzd {
         std::shared_ptr<Semaphore> shared_ptr_semaphore;
     };
     // 解释方法
+    // 解释对象类型
     template<class T>
     inline std::string DescriptionType(T&) { return std::string(typeid(T).name()); }
     template<class T>
     inline std::string DescriptionType(const T&) { return std::string(typeid(T).name()); }
+    // 解释对象值
     template<class T>
     inline std::string DescriptionValue(T&) { return {};}
     template<class T>
     inline std::string DescriptionValue(const T&) { return {};}
+    // 解释std::pair对象类型
     template<class K,class V>
     inline std::string DescriptionType(std::pair<K,V>&) { return "std::pair"; }
+    // 解释std::pair对象值
     template<class K,class V>
     inline std::string DescriptionValue(std::pair<K,V>& var) { return "{" + DescriptionValue(std::forward<K&>(var.first)) + ":" + DescriptionValue(std::forward<V&>(var.second)) + "}";}
-
+    // 解释单模板STL容器对象值宏
     #define  DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(type)                          \
     template<class T> inline std::string DescriptionValue(type<T>& var){                    \
         std::string temp = "[";                                                             \
@@ -150,10 +154,11 @@ namespace hzd {
         temp += "]";                                                                        \
         return temp;                                                                        \
     }
+    // 解释单模板STL容器类型宏
     #define DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(type)                            \
     template<class T> inline std::string DescriptionType(type<T>&) { return #type; }        \
     template<class T> inline std::string DescriptionType(const type<T>&) { return #type;}   \
-
+    // 解释双模板STL容器对象值宏
     #define  DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(type)                            \
     template<class K,class V> inline std::string DescriptionValue(type<K,V>& var){          \
         std::string temp = "{";                                                             \
@@ -163,22 +168,25 @@ namespace hzd {
         temp += "}";                                                                        \
         return temp;                                                                        \
     }
+    // 解释双模板STL容器类型宏
     #define DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(type) \
     template<class K,class V> inline std::string DescriptionType(type<K,V>&) { return #type; } \
     template<class K,class V> inline std::string DescriptionType(const type<K,V>&) { return #type; }
-
+    // 解释数值对象值宏
     #define DESCRIPTION_NUMBER_VALUE(type) \
     template<> inline std::string DescriptionValue(type& var) { return std::to_string(var); } \
     template<> inline std::string DescriptionValue(const type& var) { return std::to_string(var); }
+    // 解释数值类型宏
     #define DESCRIPTION_NUMBER_TYPE(type) \
     template<> inline std::string DescriptionType(type&) { return #type; }                     \
     template<> inline std::string DescriptionType(const type&) { return #type; }
-
+    // 解释字符串型对象值宏
     #define DESCRIPTION_STR_VALUE(type) \
     template<> inline std::string DescriptionValue(type& var) { return var; }
+    // 解释字符串类型宏
     #define DESCRIPTION_STR_TYPE(type) \
     template<> inline std::string DescriptionType(type&) { return #type; }
-
+    // 解释自定义类型宏
     // class 需要自定义的类型
     // object 自定义类型对象
     // return std::string 用于描述对象类型、值的字符串。
