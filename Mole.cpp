@@ -27,6 +27,7 @@ namespace hzd {
     std::vector<std::pair<std::thread,std::shared_ptr<hzd::Channel<Mole::LogItem>>>>    Mole::thread_group;
     std::vector<unsigned int>                                                           Mole::commit_log_channel_count;
     bool                                                                                Mole::is_disable{false};
+    std::string                                                                         Mole::save_path_prefix{"log"};
 #ifdef _WIN32
     std::mutex                                                                          color_cout_lock;
 #endif
@@ -111,15 +112,15 @@ namespace hzd {
             hzd::Channel<Mole::LogItem>& commit_channel_
     ):channel_name(std::move(channel_name_)),commit_channel(commit_channel_){
         if(is_save) {
-            fp = fopen((std::string("log/") += channel_name + ".log").c_str(),"a+");
-            if(!fp) std::cerr << "打开或创建log/" <<channel_name << ".log 失败" << std::endl;
+            fp = fopen((save_path_prefix + channel_name + ".log").c_str(),"a+");
+            if(!fp) std::cerr << "打开或创建" << save_path_prefix <<channel_name << ".log 失败" << std::endl;
         }
     }
 
     void Mole::LogChannel::SetSaveable(bool is_save_) {
         if(!is_save && is_save_) {
-            fp = fopen((std::string("log/") += channel_name + ".log").c_str(),"a+");
-            if(!fp) std::cerr << "打开或创建log/" <<channel_name << ".log 失败" << std::endl;
+            fp = fopen((save_path_prefix + channel_name + ".log").c_str(),"a+");
+            if(!fp) std::cerr << "打开或创建"<< save_path_prefix << channel_name << ".log 失败" << std::endl;
         }
         is_save = is_save_;
     }

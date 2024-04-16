@@ -364,6 +364,8 @@ namespace hzd {
         const static std::unordered_map<std::string,LogItem::LogLevel>      level_str_map;
         // 是否关闭日志
         static bool                                                         is_disable;
+        // 日志保存路径前缀
+        static std::string                                                  save_path_prefix;
     private:
         // 控制日志线程关闭标记
         static bool                                                         is_stop;
@@ -489,6 +491,12 @@ namespace hzd {
         if(!hzd::Mole::is_disable)                                                      \
             hzd::Mole::Channel(#chan).SetShowLog(bool);                                 \
     }while(0)
+
+#define MOLE_SAVE_PATH_PREFIX(path)                                                     \
+    do {                                                                                \
+        hzd::Mole::save_path_prefix = path;                                             \
+    }while(0)
+
 #endif
 } // hzd
 

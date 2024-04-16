@@ -12,8 +12,67 @@ The log channel is the subject of log control. Different log channels can set di
 
 It is worth mentioning that the Mole library provides a convenient variable logging function, which is very useful when the variable names, types, and values of certain variables at that time need to be reflected in the log.
 
+## 基准测试 & Benchmark
+对比Mole与spdlog库，虽然Mole库功能没有spdlog丰富，但是日志库的主要功能在于日志记录与回显。
 
-## Usage
+两者均不进行日志回显，只输出日志到日志文件，测试1000条日志记录
+```text
+Benchmark Software:Google Benchmark
+Test Environment: 
+    System: Windows 11 23H2 => WSL Ubuntu 22.04
+    Compiler: GNU gcc 11.4.0
+    CPU: Intel(R) Core(TM) i7-10875H@2.30GHz
+    Memory: 16G * 2 (2304.01 MHz)
+```
+### 测试结果 & Test Result
+```text
+Run on (16 X 2304.01 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x8)
+  L1 Instruction 32 KiB (x8)
+  L2 Unified 256 KiB (x8)
+  L3 Unified 16384 KiB (x1)
+Load Average: 0.10, 0.07, 0.02
+------------------------------------------------------------------------
+Benchmark                              Time             CPU   Iterations
+------------------------------------------------------------------------
+BM_CXX_MOLE/iterations:1000         2354 ns         1796 ns         1000
+BM_CXX_SPDLOG/iterations:1000       4514 ns          876 ns         1000
+```
+### 测试代码 & Test Code
+```c++
+#include <benchmark/benchmark.h>
+#include <Mole/Mole.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+
+static void BM_CXX_MOLE(benchmark::State& state) {
+    remove("log/hzd.log");
+    MOLE_CHANNEL_SHOWLOG(hzd,false);
+    MOLE_CHANNEL_SAVEABLE(hzd,true);
+    const char* str = "11111111111";
+    int x = 2;
+    for(auto _ : state) {
+        MOLE_INFO(hzd,"~",{MOLE_VAR(x),MOLE_VAR(str)});
+    }
+}
+
+static void BM_CXX_SPDLOG(benchmark::State& state) {
+    remove("log/spdlog.log");
+    spdlog::set_pattern("%Y-%m-%d %H:%M:%S [%l] %v");
+    const char* str = "11111111111";
+    int x = 2;
+    auto flogger = spdlog::basic_logger_mt("file_logger","log/spdlog.log");
+    for(auto _ : state ) {
+        flogger->info("~\n----------------\n{} {} {}\n{} {} {}\n------------------",typeid(x).name(),"x",x,typeid(str).name(),"str",str);
+    }
+}
+BENCHMARK(BM_CXX_MOLE)->Iterations(1000);
+BENCHMARK(BM_CXX_SPDLOG)->Iterations(1000);
+BENCHMARK_MAIN();
+```
+
+## 使用说明 & Usage
 默认安装Mole & default install Mole
 ```shell
 git clone https://github.com/OoShawnoO/Mole.git
@@ -82,6 +141,10 @@ int main() {
     /* 如果你不希望在include Mole.h前#define MOLE_CLOSE就关闭Mole日志功能 */
     /* 你可以使用如代码关闭*/
     //    MOLE_DISABLE(true);
+    
+    /* if you want change log save path */
+    /* 如果你需要设置日志保存位置 */
+    MOLE_SAVE_PATH_PREFIX("path");
     
     /* set log channel whether save log file,default false */
     /* 设置日志频道是否保存日志文件,默认 false */
