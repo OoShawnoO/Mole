@@ -37,12 +37,19 @@ sudo make uninstall
 
 usage for cmake
 ```cmake
+# 使用make install时 & when use make install
+# ---------------------------------------------
+find_package(Mole REQUIRED)
+target_link_libraries({TARGET} PRIVATE Mole::Mole)
+# ---------------------------------------------
+
 # 仅自定义安装需要设置 & just custom install need
 # ---------------------------------------------
 include_directories(path to Mole.h)
 link_directories(path to libMole.so/libMole.dll)
-# ---------------------------------------------
+
 target_link_libraries({TARGET} PRIVATE Mole)
+# ---------------------------------------------
 ```
 usage in code
 ```c++
@@ -53,7 +60,7 @@ usage in code
 #include <unordered_map>
 #include <vector>
 #include <string>
-#include <Mole.h>
+#include <Mole/Mole.h>
 
 /* if you want custom class/struct to log,use macro MOLE_SELF_DEFINE() */
 /* 想要自定义类型用于记录 可以使用MOLE_SELF_DEFINE()宏*/
