@@ -14,17 +14,34 @@ It is worth mentioning that the Mole library provides a convenient variable logg
 
 
 ## Usage
-install Mole library
+默认安装Mole & default install Mole
 ```shell
 git clone https://github.com/OoShawnoO/Mole.git
 mkdir build && cd build
 cmake ..
-make
+# install for system
+sudo make install
 ```
+自定义安装路径 & custom install path
+```shell
+git clone https://github.com/OoShawnoO/Mole.git
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX="path to install" ..
+sudo make install
+```
+卸载Mole & uninstall Mole
+```shell
+# uninstall
+sudo make uninstall
+```
+
 usage for cmake
 ```cmake
-include_directories(Mole)    #("path to Mole.h")
-link_directories(Mole/build) #(path to libMole.so/libMole.dll/libMole.a/libMole.lib")
+# 仅自定义安装需要设置 & just custom install need
+# ---------------------------------------------
+include_directories(path to Mole.h)
+link_directories(path to libMole.so/libMole.dll)
+# ---------------------------------------------
 target_link_libraries({TARGET} PRIVATE Mole)
 ```
 usage in code
@@ -36,7 +53,7 @@ usage in code
 #include <unordered_map>
 #include <vector>
 #include <string>
-#include "../Mole.h"
+#include <Mole.h>
 
 /* if you want custom class/struct to log,use macro MOLE_SELF_DEFINE() */
 /* 想要自定义类型用于记录 可以使用MOLE_SELF_DEFINE()宏*/
