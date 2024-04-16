@@ -1,0 +1,18 @@
+message(path = ${CMAKE_INSTALL_PREFIX})
+
+if(WIN32)
+    if(EXISTS ${CMAKE_INSTALL_PREFIX}/lib/libMole.dll)
+        file(REMOVE ${CMAKE_INSTALL_PREFIX}/lib/libMole.so)
+        message("delete shared library:${CMAKE_INSTALL_PREFIX}/lib/libMole.dll")
+    endif ()
+elseif(UNIX)
+    if(EXISTS ${CMAKE_INSTALL_PREFIX}/lib/libMole.so)
+        file(REMOVE ${CMAKE_INSTALL_PREFIX}/lib/libMole.so)
+        message("delete shared library:${CMAKE_INSTALL_PREFIX}/lib/libMole.so")
+    endif ()
+endif ()
+
+if(EXISTS ${CMAKE_INSTALL_PREFIX}/include/Mole.h)
+    file(REMOVE ${CMAKE_INSTALL_PREFIX}/include/Mole.h)
+    message("delete header file:${CMAKE_INSTALL_PREFIX}/include/Mole.h")
+endif ()
