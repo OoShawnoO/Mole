@@ -99,7 +99,7 @@ namespace hzd {
             return true;
         }
         // 对象出队
-        T Pop() {
+        __attribute__((unused)) T Pop() {
             if(is_block) shared_ptr_semaphore->Wait();
             if(container.empty()) return {};
             auto ret = std::move(container.front());
@@ -112,12 +112,12 @@ namespace hzd {
             return container.empty();
         }
         // 当前大小
-        size_t Size() {
+        __attribute__((unused)) size_t Size() {
             std::lock_guard<std::mutex> guard(mutex);
             return container.size();
         }
         // 最大容量
-        inline size_t Capacity() {
+        __attribute__((unused)) inline size_t Capacity() {
             return capacity;
         }
     private:
@@ -274,19 +274,32 @@ namespace hzd {
                 TRACE,INFO,WARN,ERROR,FATAL
             };
             // 日志等级
-            LogLevel                    level;
+            LogLevel                    level{TRACE};
             // 日志内容
-            std::string                 content;
+            std::string                 content{};
             // 日志时间
-            time_t                      time;
+            time_t                      time{};
             // 发布日志行号
-            unsigned int                line;
+            unsigned int                line{};
             // 发布日志文件位置
-            const char*                 file_name;
+            const char*                 file_name{};
             // 日志打包变量内容
-            std::string                 variables;
+            std::string                 variables{};
             // 频道名
-            std::string                 channel_name;
+            std::string                 channel_name{};
+
+            LogItem() = default;
+            LogItem(
+                    LogLevel level,
+                    std::string                 content,
+                    time_t                      time,
+                    unsigned int                line,
+                    const char*                 file_name,
+                    std::string                 variables,
+                    std::string                 channel_name
+            );
+            LogItem(LogItem&& log_item) noexcept;
+            LogItem& operator=(LogItem&& log_item) noexcept;
         };
         // 日志频道
         class LogChannel {

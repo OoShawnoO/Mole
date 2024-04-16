@@ -75,13 +75,9 @@ namespace hzd {
     }
 #endif
 
-    Semaphore::Semaphore(ssize_t count) : count(count) {
+    Semaphore::Semaphore(ssize_t count) : count(count) {}
 
-    }
-
-    Semaphore::~Semaphore() {
-        SignalAll();
-    }
+    Semaphore::~Semaphore() { SignalAll(); }
 
     void Semaphore::Signal() {
         std::unique_lock<std::mutex> guard(mutex);
@@ -107,13 +103,45 @@ namespace hzd {
         }
     }
 
+    Mole::LogItem::LogItem(
+            LogLevel                    level_,
+            std::string                 content_,
+            time_t                      time_,
+            unsigned int                line_,
+            const char*                 file_name_,
+            std::string                 variables_,
+            std::string                 channel_name_
+    ):  level(level_),content(std::move(content_)),time(time_),line(line_),file_name(file_name_),
+        variables(std::move(variables_)),channel_name(std::move(channel_name_)){}
+
+    Mole::LogItem::LogItem(Mole::LogItem &&log_item) noexcept{
+        level = log_item.level;
+        content = std::move(log_item.content);
+        time = log_item.time;
+        line = log_item.line;
+        file_name = log_item.file_name;
+        variables = std::move(log_item.variables);
+        channel_name = std::move(log_item.channel_name);
+    }
+
+    Mole::LogItem &Mole::LogItem::operator=(Mole::LogItem &&log_item)  noexcept {
+        level = log_item.level;
+        content = std::move(log_item.content);
+        time = log_item.time;
+        line = log_item.line;
+        file_name = log_item.file_name;
+        variables = std::move(log_item.variables);
+        channel_name = std::move(log_item.channel_name);
+        return *this;
+    }
+
     Mole::LogChannel::LogChannel(
             std::string channel_name_,
             hzd::Channel<Mole::LogItem>& commit_channel_
     ):channel_name(std::move(channel_name_)),commit_channel(commit_channel_){
         if(is_save) {
             fp = fopen((save_path_prefix + channel_name + ".log").c_str(),"a+");
-            if(!fp) std::cerr << "打开或创建" << save_path_prefix <<channel_name << ".log 失败" << std::endl;
+            if(!fp) std::cerr << "打开或创建" << save_path_prefix << channel_name << ".log 失败" << std::endl;
         }
     }
 
@@ -125,9 +153,9 @@ namespace hzd {
         is_save = is_save_;
     }
 
-    void Mole::LogChannel::SetShowLog(bool is_show_) {is_show = is_show_;}
+    void Mole::LogChannel::SetShowLog(bool is_show_) { is_show = is_show_; }
 
-    void Mole::LogChannel::SetLevel(Mole::LogItem::LogLevel _level) {level = _level;}
+    void Mole::LogChannel::SetLevel(Mole::LogItem::LogLevel _level) { level = _level; }
 
     Mole::LogChannel::~LogChannel() {
         if(fp) {
@@ -164,8 +192,7 @@ namespace hzd {
             unsigned int line,
             const std::vector<std::string>& variables
     ) noexcept {
-        std::string _temp = content;
-        Fatal(_temp,file_name,line,variables);
+        Fatal(std::string { content },file_name,line,variables);
     }
     void Mole::LogChannel::Fatal(
             const std::string& content,
@@ -183,8 +210,7 @@ namespace hzd {
             unsigned int line,
             const std::vector<std::string>& variables
     ) noexcept {
-        std::string _temp = content;
-        Error(_temp,file_name,line,variables);
+        Error(std::string { content },file_name,line,variables);
     }
     void Mole::LogChannel::Error(
             const std::string& content,
@@ -201,8 +227,7 @@ namespace hzd {
             unsigned int line,
             const std::vector<std::string>& variables
     ) noexcept {
-        std::string _temp = content;
-        Warn(_temp,file_name,line,variables);
+        Warn(std::string { content },file_name,line,variables);
     }
     void Mole::LogChannel::Warn(
             const std::string& content,
@@ -219,8 +244,7 @@ namespace hzd {
             unsigned int line,
             const std::vector<std::string>& variables
     ) noexcept {
-        std::string _temp = content;
-        Info(_temp,file_name,line,variables);
+        Info(std::string { content },file_name,line,variables);
     }
     void Mole::LogChannel::Info(
             const std::string& content,
@@ -237,8 +261,7 @@ namespace hzd {
             unsigned int line,
             const std::vector<std::string>& variables
     ) noexcept {
-        std::string _temp = content;
-        Trace(_temp,file_name,line,variables);
+        Trace(std::string { content },file_name,line,variables);
     }
     void Mole::LogChannel::Trace(
             const std::string& content,
@@ -248,6 +271,7 @@ namespace hzd {
     ) noexcept {
         LOG_ITEM(LogItem::TRACE);
     }
+
     Mole::LogChannel &Mole::Channel(const std::string &channel_name) {
         static Mole mole;
         auto channel_map_iter = log_channel_map.find(channel_name);
@@ -328,4 +352,5 @@ namespace hzd {
             if(t.first.joinable()) t.first.join();
         }
     }
+
 } // hzd
