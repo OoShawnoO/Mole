@@ -22,7 +22,7 @@
 
 namespace hzd {
 
-    bool Mole::is_stop = false;
+    bool                                                                                Mole::is_stop = false;
     std::unordered_map<std::string,std::shared_ptr<Mole::LogChannel>>                   Mole::log_channel_map;
     std::vector<std::pair<std::thread,std::shared_ptr<hzd::Channel<Mole::LogItem>>>>    Mole::thread_group;
     std::vector<unsigned int>                                                           Mole::commit_log_channel_count;

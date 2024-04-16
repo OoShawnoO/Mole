@@ -131,11 +131,13 @@ namespace hzd {
     // 解释对象类型
     template<class T>
     inline std::string DescriptionType(T&) { return std::string(typeid(T).name()); }
+    // 解释对象类型
     template<class T>
     inline std::string DescriptionType(const T&) { return std::string(typeid(T).name()); }
     // 解释对象值
     template<class T>
     inline std::string DescriptionValue(T&) { return {};}
+    // 解释对象值
     template<class T>
     inline std::string DescriptionValue(const T&) { return {};}
     // 解释std::pair对象类型

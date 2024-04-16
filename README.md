@@ -76,6 +76,7 @@ BENCHMARK_MAIN();
 默认安装Mole & default install Mole
 ```shell
 git clone https://github.com/OoShawnoO/Mole.git
+cd Mole
 mkdir build && cd build
 cmake ..
 # install for system
@@ -84,6 +85,7 @@ sudo make install
 自定义安装路径 & custom install path
 ```shell
 git clone https://github.com/OoShawnoO/Mole.git
+cd Mole
 mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX="path to install" ..
 sudo make install
