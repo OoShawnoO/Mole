@@ -6,6 +6,7 @@
   * @date           : 2024/4/10
   ******************************************************************************
   */
+//#define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
 #include <utility>
@@ -17,7 +18,6 @@
 #define CANCEL_COLOR_SCHEME "\033[0m"
 #elif _WIN32
 #include <windows.h>
-#undef ERROR
 #endif
 
 namespace hzd {
@@ -26,7 +26,6 @@ namespace hzd {
     std::unordered_map<std::string,std::shared_ptr<Mole::LogChannel>>                   Mole::log_channel_map;
     std::vector<std::pair<std::thread,std::shared_ptr<hzd::Channel<Mole::LogItem>>>>    Mole::thread_group;
     std::vector<unsigned int>                                                           Mole::commit_log_channel_count;
-    bool                                                                                Mole::is_disable{false};
     std::string                                                                         Mole::save_path_prefix{"log"};
 #ifdef _WIN32
     std::mutex                                                                          color_cout_lock;
@@ -36,7 +35,7 @@ namespace hzd {
             {Mole::LogItem::LogLevel::TRACE,"TRACE"},
             {Mole::LogItem::LogLevel::INFO,"INFO"},
             {Mole::LogItem::LogLevel::WARN,"WARN"},
-            {Mole::LogItem::LogLevel::ERROR,"ERROR"},
+            {Mole::LogItem::LogLevel::ERROR_,"ERROR"},
             {Mole::LogItem::LogLevel::FATAL,"FATAL"}
     };
 
@@ -44,7 +43,7 @@ namespace hzd {
             {"TRACE",Mole::LogItem::LogLevel::TRACE},
             {"INFO",Mole::LogItem::LogLevel::INFO},
             {"WARN",Mole::LogItem::LogLevel::WARN},
-            {"ERROR",Mole::LogItem::LogLevel::ERROR},
+            {"ERROR",Mole::LogItem::LogLevel::ERROR_},
             {"FATAL",Mole::LogItem::LogLevel::FATAL}
     };
 
@@ -53,7 +52,7 @@ namespace hzd {
             {Mole::LogItem::LogLevel::TRACE,"\033[36m"},
             {Mole::LogItem::LogLevel::INFO,"\033[32m"},
             {Mole::LogItem::LogLevel::WARN,"\033[33m"},
-            {Mole::LogItem::LogLevel::ERROR,"\033[31m"},
+            {Mole::LogItem::LogLevel::ERROR_,"\033[31m"},
             {Mole::LogItem::LogLevel::FATAL,"\033[31m"}
     };
 #elif _WIN32
@@ -61,7 +60,7 @@ namespace hzd {
             {Mole::LogItem::LogLevel::TRACE,"1"},
             {Mole::LogItem::LogLevel::INFO,"2"},
             {Mole::LogItem::LogLevel::WARN,"6"},
-            {Mole::LogItem::LogLevel::ERROR,"12"},
+            {Mole::LogItem::LogLevel::ERROR_,"12"},
             {Mole::LogItem::LogLevel::FATAL,"4"}
     };
 
@@ -218,7 +217,7 @@ namespace hzd {
             unsigned int line,
             const std::vector<std::string>& variables
     ) noexcept {
-        LOG_ITEM(LogItem::ERROR);
+        LOG_ITEM(LogItem::ERROR_);
     }
     // WARN级日志
     void Mole::LogChannel::Warn(

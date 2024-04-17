@@ -10,6 +10,7 @@
 #ifndef MOLE_H
 #define MOLE_H
 
+#include <string>
 #include <condition_variable>
 #include <unordered_map>
 #include <vector>
@@ -18,7 +19,7 @@
 
 namespace hzd {
 #ifdef _WIN32
-    using ssize_t = long long int;
+    using ssize_t = long long;
     using int8_t = char;
     using int16_t = short;
     using int32_t = int;
@@ -99,7 +100,7 @@ namespace hzd {
             return true;
         }
         // 对象出队
-        __attribute__((unused)) T Pop() {
+        T Pop() {
             if(is_block) shared_ptr_semaphore->Wait();
             if(container.empty()) return {};
             auto ret = std::move(container.front());
@@ -112,12 +113,12 @@ namespace hzd {
             return container.empty();
         }
         // 当前大小
-        __attribute__((unused)) size_t Size() {
+        size_t Size() {
             std::lock_guard<std::mutex> guard(mutex);
             return container.size();
         }
         // 最大容量
-        __attribute__((unused)) inline size_t Capacity() {
+        inline size_t Capacity() {
             return capacity;
         }
     private:
@@ -273,7 +274,7 @@ namespace hzd {
         struct LogItem {
             // 日志等级
             enum LogLevel {
-                TRACE,INFO,WARN,ERROR,FATAL
+                TRACE,INFO,WARN,ERROR_,FATAL
             };
             // 日志等级
             LogLevel                    level{TRACE};
@@ -402,7 +403,7 @@ namespace hzd {
         // 日志循环
         static void LogLoop(const std::shared_ptr<hzd::Channel<LogItem>>& commit_channel);
     };
-
+    bool Mole::is_disable = false;
 #ifdef MOLE_CLOSE
 #define MOLE_FATAL(chan,content,...)
 #define MOLE_ERROR(chan,content,...)
@@ -438,7 +439,7 @@ namespace hzd {
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
             auto& channel = hzd::Mole::Channel(#chan);                                  \
-            if(channel.level <= hzd::Mole::LogItem::LogLevel::ERROR){                   \
+            if(channel.level <= hzd::Mole::LogItem::LogLevel::ERROR_){                  \
                 channel.Error(content,__FILE__,__LINE__,##__VA_ARGS__);                 \
             }                                                                           \
         }                                                                               \
