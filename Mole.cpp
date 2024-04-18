@@ -140,14 +140,14 @@ namespace hzd {
     ):channel_name(std::move(channel_name_)),commit_channel(commit_channel_){
         if(is_save) {
             fp = fopen((save_path_prefix + channel_name + ".log").c_str(),"a+");
-            if(!fp) std::cerr << "打开或创建" << save_path_prefix << channel_name << ".log 失败" << std::endl;
+            if(!fp) std::cerr << "open or create" << save_path_prefix << channel_name << ".log failed" << std::endl;
         }
     }
 
     void Mole::LogChannel::SetSaveable(bool is_save_) {
         if(!is_save && is_save_) {
             fp = fopen((save_path_prefix + channel_name + ".log").c_str(),"a+");
-            if(!fp) std::cerr << "打开或创建"<< save_path_prefix << channel_name << ".log 失败" << std::endl;
+            if(!fp) std::cerr << "open or create"<< save_path_prefix << channel_name << ".log failed" << std::endl;
         }
         is_save = is_save_;
     }

@@ -34,3 +34,4 @@
 test/*
 cmake-build*
 build
+build-msvc
