@@ -6,19 +6,19 @@
   * @date           : 2024/4/10
   ******************************************************************************
   */
-//#define _CRT_SECURE_NO_WARNINGS
 
+#ifdef __linux__
+#define CANCEL_COLOR_SCHEME "\033[0m"
+#elif _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#include <windows.h>
+#endif
 #include <iostream>
 #include <utility>
 #include <cstring>
 #include <sstream>
 #include "Mole.h"
 
-#ifdef __linux__
-#define CANCEL_COLOR_SCHEME "\033[0m"
-#elif _WIN32
-#include <windows.h>
-#endif
 
 namespace hzd {
 

@@ -19,7 +19,7 @@
 
 namespace hzd {
 #ifdef _WIN32
-    using ssize_t = long long;
+    using ssize_t = long;
     using int8_t = char;
     using int16_t = short;
     using int32_t = int;
