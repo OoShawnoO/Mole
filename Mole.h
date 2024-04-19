@@ -227,7 +227,9 @@ namespace hzd {
     DESCRIPTION_STR_VALUE(char*)
     /* STL value & type */
     DESCRIPTION_STR_TYPE(std::string)
+    DESCRIPTION_STR_TYPE(const std::string)
     DESCRIPTION_STR_VALUE(std::string)
+    DESCRIPTION_STR_VALUE(const std::string)
 
 #ifdef _STL_MAP_H
     DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::map)
@@ -266,9 +268,17 @@ namespace hzd {
     DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::unordered_set)
 #endif
 
-
+#ifdef _WIN32
+#ifdef MOLE_EXPORTS
+#define MOLE_API __declspec(dllexport)
+#else
+#define MOLE_API __declspec(dllimport)
+#endif
+#else
+#define MOLE_API
+#endif
     // 日志类
-    class Mole {
+    class MOLE_API Mole {
     public:
         // 日志项
         struct LogItem {
@@ -403,7 +413,6 @@ namespace hzd {
         // 日志循环
         static void LogLoop(const std::shared_ptr<hzd::Channel<LogItem>>& commit_channel);
     };
-    bool Mole::is_disable = false;
 #ifdef MOLE_CLOSE
 #define MOLE_FATAL(chan,content,...)
 #define MOLE_ERROR(chan,content,...)
