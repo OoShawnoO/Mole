@@ -154,8 +154,18 @@ namespace hzd {
         for(auto& iter : var) {                                                             \
             temp += DescriptionValue(std::forward<decltype(iter)&>(iter)) += ",";           \
         }                                                                                   \
+        if(!var.empty()) temp.pop_back();                                                   \
         temp += "]";                                                                        \
         return temp;                                                                        \
+    }                                                                                       \
+    template<class T> inline std::string DescriptionValue(const type<T>& var){              \
+        std::string temp = "[";                                                             \
+        for(const auto& iter : var) {                                                       \
+            temp += DescriptionValue(std::forward<decltype(iter)&>(iter)) += ",";           \
+        }                                                                                   \
+        if(!var.empty()) temp.pop_back();                                                   \
+        temp += "]";                                                                        \
+        return temp;                                                                                        \
     }
     // 解释单模板STL容器类型宏
     #define DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(type)                            \
@@ -165,30 +175,46 @@ namespace hzd {
     #define  DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(type)                            \
     template<class K,class V> inline std::string DescriptionValue(type<K,V>& var){          \
         std::string temp = "{";                                                             \
-        for(auto& iter : var) {                                                             \
+        for(const auto& iter : var) {                                                       \
             temp += DescriptionValue(std::forward<decltype(iter)&>(iter))+=",";             \
         }                                                                                   \
+        if(!var.empty()) temp.pop_back();                                                   \
         temp += "}";                                                                        \
         return temp;                                                                        \
-    }
+    }                                                                                       \
+    template<class K,class V> inline std::string DescriptionValue(const type<K,V>& var){    \
+        std::string temp = "{";                                                             \
+        for(const auto& iter : var) {                                                       \
+            temp += DescriptionValue(std::forward<decltype(iter)&>(iter))+=",";             \
+        }                                                                                   \
+        if(!var.empty()) temp.pop_back();                                                   \
+        temp += "}";                                                                        \
+        return temp;                                                                        \
+    }                                                                                       \
     // 解释双模板STL容器类型宏
-    #define DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(type) \
-    template<class K,class V> inline std::string DescriptionType(type<K,V>&) { return #type; } \
-    template<class K,class V> inline std::string DescriptionType(const type<K,V>&) { return #type; }
+    #define DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(type)                          \
+    template<class K,class V> inline std::string DescriptionType(type<K,V>&)            \
+    { return #type; }                                                                   \
+    template<class K,class V> inline std::string DescriptionType(const type<K,V>&)      \
+    { return #type; }
     // 解释数值对象值宏
-    #define DESCRIPTION_NUMBER_VALUE(type) \
-    template<> inline std::string DescriptionValue(type& var) { return std::to_string(var); } \
-    template<> inline std::string DescriptionValue(const type& var) { return std::to_string(var); }
+    #define DESCRIPTION_NUMBER_VALUE(type)                                              \
+    template<> inline std::string DescriptionValue(type& var)                           \
+    { return std::to_string(var); }                                                     \
+    template<> inline std::string DescriptionValue(const type& var)                     \
+    { return std::to_string(var); }
     // 解释数值类型宏
-    #define DESCRIPTION_NUMBER_TYPE(type) \
-    template<> inline std::string DescriptionType(type&) { return #type; }                     \
+    #define DESCRIPTION_NUMBER_TYPE(type)                                               \
+    template<> inline std::string DescriptionType(type&) { return #type; }              \
     template<> inline std::string DescriptionType(const type&) { return #type; }
     // 解释字符串型对象值宏
-    #define DESCRIPTION_STR_VALUE(type) \
-    template<> inline std::string DescriptionValue(type& var) { return var; }
+    #define DESCRIPTION_STR_VALUE(type)                                                 \
+    template<> inline std::string DescriptionValue(type& var) { return var; }           \
+    template<> inline std::string DescriptionValue(const type& var) { return var; }                                  \
     // 解释字符串类型宏
-    #define DESCRIPTION_STR_TYPE(type) \
-    template<> inline std::string DescriptionType(type&) { return #type; }
+    #define DESCRIPTION_STR_TYPE(type)                                                  \
+    template<> inline std::string DescriptionType(type&) { return #type; }              \
+    template<> inline std::string DescriptionType(const type&) { return #type; }
     // 解释自定义类型宏
     // class 需要自定义的类型
     // object 自定义类型对象
@@ -196,7 +222,10 @@ namespace hzd {
     #define MOLE_SELF_DEFINE(class,object)                                                      \
     template<> inline std::string hzd::DescriptionType(class&) { return #class; }               \
     template<> inline std::string hzd::DescriptionType(const class&) { return #class; }         \
+    template<> inline std::string hzd::DescriptionValue(const class& object)                    \
+    { return DescriptionValue(const_cast<const class&>(object);) }                              \
     template<> inline std::string hzd::DescriptionValue(class& object)
+
     /* basic number type type */
     DESCRIPTION_NUMBER_TYPE(int8_t)
     DESCRIPTION_NUMBER_TYPE(int16_t)
@@ -209,7 +238,6 @@ namespace hzd {
     DESCRIPTION_NUMBER_TYPE(float)
     DESCRIPTION_NUMBER_TYPE(double)
     DESCRIPTION_NUMBER_TYPE(long double)
-    DESCRIPTION_STR_TYPE(const char*)
     DESCRIPTION_STR_TYPE(char*)
     /* basic number type value */
     DESCRIPTION_NUMBER_VALUE(int8_t)
@@ -223,13 +251,10 @@ namespace hzd {
     DESCRIPTION_NUMBER_VALUE(float)
     DESCRIPTION_NUMBER_VALUE(double)
     DESCRIPTION_NUMBER_VALUE(long double)
-    DESCRIPTION_STR_VALUE(const char*)
     DESCRIPTION_STR_VALUE(char*)
     /* STL value & type */
     DESCRIPTION_STR_TYPE(std::string)
-    DESCRIPTION_STR_TYPE(const std::string)
     DESCRIPTION_STR_VALUE(std::string)
-    DESCRIPTION_STR_VALUE(const std::string)
 
 #ifdef _STL_MAP_H
     DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::map)
