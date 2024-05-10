@@ -472,7 +472,7 @@ namespace hzd {
 #define MOLE_FATAL(chan,content,...)                                                    \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
-            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            auto& channel = hzd::Mole::Channel(chan);                                  \
             if(channel.level <= hzd::Mole::LogItem::LogLevel::FATAL){                   \
                 channel.Fatal(content,__FILE__,__LINE__,##__VA_ARGS__);                 \
             }                                                                           \
@@ -485,7 +485,7 @@ namespace hzd {
 #define MOLE_ERROR(chan,content,...)                                                    \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
-            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            auto& channel = hzd::Mole::Channel(chan);                                  \
             if(channel.level <= hzd::Mole::LogItem::LogLevel::ERROR_){                  \
                 channel.Error(content,__FILE__,__LINE__,##__VA_ARGS__);                 \
             }                                                                           \
@@ -498,7 +498,7 @@ namespace hzd {
 #define MOLE_WARN(chan,content,...)                                                     \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
-            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            auto& channel = hzd::Mole::Channel(chan);                                  \
             if(channel.level <= hzd::Mole::LogItem::LogLevel::WARN){                    \
                 channel.Warn(content,__FILE__,__LINE__,##__VA_ARGS__);                  \
             }                                                                           \
@@ -511,7 +511,7 @@ namespace hzd {
 #define MOLE_INFO(chan,content,...)                                                     \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
-            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            auto& channel = hzd::Mole::Channel(chan);                                  \
             if(channel.level <= hzd::Mole::LogItem::LogLevel::INFO){                    \
                 channel.Info(content,__FILE__,__LINE__,##__VA_ARGS__);                  \
             }                                                                           \
@@ -524,7 +524,7 @@ namespace hzd {
 #define MOLE_TRACE(chan,content,...)                                                    \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
-            auto& channel = hzd::Mole::Channel(#chan);                                  \
+            auto& channel = hzd::Mole::Channel(chan);                                  \
             if(channel.level <= hzd::Mole::LogItem::LogLevel::TRACE){                   \
                 channel.Trace(content,__FILE__,__LINE__,##__VA_ARGS__);                 \
             }                                                                           \
@@ -538,7 +538,7 @@ namespace hzd {
 #define MOLE_CHANNEL_LEVEL(chan,level)                                                  \
     do {                                                                                \
         if(!hzd::Mole::is_disable)                                                      \
-            hzd::Mole::Channel(#chan).SetLevel(hzd::Mole::level_str_map.at(level));     \
+            hzd::Mole::Channel(chan).SetLevel(hzd::Mole::level_str_map.at(level));     \
     }while(0)
     // 设置日志频道是否保存日志文件
     // chan 日志频道名
@@ -546,13 +546,13 @@ namespace hzd {
 #define MOLE_CHANNEL_SAVEABLE(chan,bool)                                                \
     do {                                                                                \
         if(!hzd::Mole::is_disable)                                                      \
-            hzd::Mole::Channel(#chan).SetSaveable(bool);                                \
+            hzd::Mole::Channel(chan).SetSaveable(bool);                                \
     }while(0)
 
 #define MOLE_CHANNEL_SHOWLOG(chan,bool)                                                 \
     do {                                                                                \
         if(!hzd::Mole::is_disable)                                                      \
-            hzd::Mole::Channel(#chan).SetShowLog(bool);                                 \
+            hzd::Mole::Channel(chan).SetShowLog(bool);                                 \
     }while(0)
 
 #define MOLE_SAVE_PATH_PREFIX(path)                                                     \
