@@ -129,6 +129,9 @@ struct Test {
     int x = 1;
     float y = 3.14;
     double z = 1.414;
+
+    Test() = default;
+    Test(int _x,float _y,double _z) : x(_x),y(_y),z(_z) {}
 };
 MOLE_SELF_DEFINE(Test,test_object) {
     std::string temp = "\n";
@@ -150,30 +153,30 @@ int main() {
     
     /* set log channel whether save log file,default false */
     /* 设置日志频道是否保存日志文件,默认 false */
-    MOLE_CHANNEL_SAVEABLE(channel_name,true);
+    MOLE_CHANNEL_SAVEABLE("channel_name",true);
     
     /* set log channel whether output log to terminal,default true */
     /* 设置日志频道是否输出日志到终端,默认开启 */
-    MOLE_CHANNEL_SHOWLOG(channel_name,true);
+    MOLE_CHANNEL_SHOWLOG("channel_name",true);
     
     /* set log channel filter level */
     /* 设置日志频道过滤等级 */
     /* low to high TRACE -> INFO -> WARN -> ERROR -> FATAL */
     /* 由低到高 TRACE -> INFO -> WARN -> ERROR -> FATAL */
-    MOLE_CHANNEL_LEVEL(channel_name,"TRACE");
+    MOLE_CHANNEL_LEVEL("channel_name","TRACE");
     
     /* log */
     /* 打日志 */
     /* level trace */
-    MOLE_TRACE(channel_name,"xxx"); /* 2024-04-16 00:18:12 [TRACE] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:56] */
+    MOLE_TRACE("channel_name","xxx"); /* 2024-04-16 00:18:12 [TRACE] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:56] */
     /* level info */
-    MOLE_INFO(channel_name,"xxx");  /*2024-04-16 00:18:12 [INFO] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:58] */
+    MOLE_INFO("channel_name","xxx");  /*2024-04-16 00:18:12 [INFO] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:58] */
     /* level warn */
-    MOLE_WARN(channel_name,"xxx");  /* 2024-04-16 00:18:12 [WARN] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:60] */
+    MOLE_WARN("channel_name","xxx");  /* 2024-04-16 00:18:12 [WARN] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:60] */
     /* level error */
-    MOLE_ERROR(channel_name,"xxx"); /* 2024-04-16 00:18:12 [ERROR] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:62] */
+    MOLE_ERROR("channel_name","xxx"); /* 2024-04-16 00:18:12 [ERROR] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:62] */
     /* level fatal */
-    MOLE_FATAL(channel_name,"xxx"); /* 2024-04-16 00:18:12 [FATAL] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:64] */
+    MOLE_FATAL("channel_name","xxx"); /* 2024-04-16 00:18:12 [FATAL] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:64] */
     
     
     int x = 1;
@@ -184,7 +187,7 @@ int main() {
     std::vector<int> vec = {1,2,3,4,5};
     std::unordered_map<int,std::string> umap  = { {1,"a"},{2,"b"} };
     /* 日志记录变量 */
-    MOLE_INFO(channel_name,"xxx",{
+    MOLE_INFO("channel_name","xxx",{
     MOLE_VAR(x),MOLE_VAR(y),MOLE_VAR(z),MOLE_VAR(cstr),
     MOLE_VAR(stdstr),MOLE_VAR(vec),MOLE_VAR(umap)
     });
@@ -220,7 +223,7 @@ int main() {
     }
      */
     Test t{};
-    MOLE_INFO(channel_name,"xxx",{ MOLE_VAR(t)});
+    MOLE_INFO("channel_name","xxx",{ MOLE_VAR(t)});
     /*
      2024-04-16 00:18:12 [INFO] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:84]
         ----------------------------
