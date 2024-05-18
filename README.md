@@ -48,12 +48,12 @@ BM_CXX_SPDLOG/iterations:1000       4514 ns          876 ns         1000
 
 static void BM_CXX_MOLE(benchmark::State& state) {
     remove("log/hzd.log");
-    MOLE_CHANNEL_SHOWLOG(hzd,false);
-    MOLE_CHANNEL_SAVEABLE(hzd,true);
+    MOLE_CHANNEL_SHOWLOG("hzd",false);
+    MOLE_CHANNEL_SAVEABLE("hzd",true);
     const char* str = "11111111111";
     int x = 2;
     for(auto _ : state) {
-        MOLE_INFO(hzd,"~",{MOLE_VAR(x),MOLE_VAR(str)});
+        MOLE_INFO("hzd","~",{MOLE_VAR(x),MOLE_VAR(str)});
     }
 }
 
