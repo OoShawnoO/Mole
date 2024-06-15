@@ -128,193 +128,78 @@ namespace hzd {
         std::mutex mutex;
         std::shared_ptr<Semaphore> shared_ptr_semaphore;
     };
+
     // 解释方法
-    // 解释对象类型
+    // 简单变量字符串规则
     template<class T>
-    inline std::string DescriptionType(T&) { return std::string(typeid(T).name()); }
-    // 解释对象类型
+    struct has_stringfiy {
+    private:
+        template<class U>
+        static auto has(int x) -> decltype(std::to_string(std::declval<U>()), std::true_type());
+        template<class U>
+        static std::false_type has(...);
+    public:
+        static constexpr bool value = decltype(has<T>(0))::value;
+    };
     template<class T>
-    inline std::string DescriptionType(const T&) { return "const " + std::string(typeid(T).name()); }
-    // 解释对象值
+    struct is_string {
+    private:
+        template<class U>
+        static auto has(int x) -> decltype(std::string(std::declval<U>()), std::true_type());
+        template<class U>
+        static std::false_type has(...);
+    public:
+        static constexpr bool value = decltype(has<T>(0))::value;
+    };
+    // iterator容器规则
     template<class T>
-    inline std::string DescriptionValue(T&) { return {};}
-    // 解释对象值
-    template<class T>
-    inline std::string DescriptionValue(const T& var) { return DescriptionValue(const_cast<T&>(var));}
-    // 解释std::pair对象类型
-    template<class K,class V>
-    inline std::string DescriptionType(std::pair<K,V>&) { return "std::pair"; }
-    // 解释std::pair对象值
-    template<class K,class V>
-    inline std::string DescriptionValue(std::pair<K,V>& var) { return "{" + DescriptionValue(std::forward<K&>(var.first)) + ":" + DescriptionValue(std::forward<V&>(var.second)) + "}";}
-    // 解释单模板STL容器对象值宏
-    #define  DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(type)                          \
-    template<class T> inline std::string DescriptionValue(type<T>& var){                    \
-        std::string temp = "[";                                                             \
-        for(const auto& iter : var) {                                                       \
-            temp += DescriptionValue(std::forward<decltype(iter)&>(iter)) += ",";           \
-        }                                                                                   \
-        if(!var.empty()) temp.pop_back();                                                   \
-        temp += "]";                                                                        \
-        return temp;                                                                        \
+    struct has_iterator {
+    private:
+        template<class U>
+        static auto has(int x) -> decltype(std::declval<U>().cbegin(), std::true_type());
+        template<class U>
+        static std::false_type has(...);
+    public:
+        static constexpr bool value = decltype(has<T>(0))::value;
+    };
+    // std::string规则
+    template<class T,typename std::enable_if<is_string<T>::value,int>::type = 0>
+    std::string Describe(const T& value) { return value; }
+    // 限制字符串化规则
+    template<class T,typename std::enable_if<has_stringfiy<T>::value,int>::type = 0>
+    std::string Describe(const T& value) { return std::to_string(value); }
+    // std::pair规则
+    template<class K,class V,typename std::enable_if<!has_iterator<std::pair<K,V>>::value && !has_stringfiy<std::pair<K,V>>::value,int>::type = 0>
+    std::string Describe(const std::pair<K,V>& value) { return "{" + Describe(value.first) + "," + Describe(value.second) + "}";}
+    // 限制iterator规则
+    template<class T,typename std::enable_if<!is_string<T>::value && has_iterator<T>::value,int>::type = 0>
+    std::string Describe(const T& value) {
+        std::string description = "{ ";
+        for(auto iter = value.cbegin(); iter != value.cend(); ++iter) {
+            description += Describe(*iter);
+            description += " ";
+        }
+        description += "}";
+        return description;
     }
-    // 解释单模板STL容器类型宏
-    #define DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(type)                            \
-    template<class T> inline std::string DescriptionType(type<T>&) { return #type; }        \
-    template<class T> inline std::string DescriptionType(const type<T>&) { return std::string("const") + #type;}   \
-    // 解释双模板STL容器对象值宏
-    #define  DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(type)                            \
-    template<class K,class V> inline std::string DescriptionValue(type<K,V>& var){          \
-        std::string temp = "{";                                                             \
-        for(const auto& iter : var) {                                                       \
-            temp += DescriptionValue(std::forward<decltype(iter)&>(iter))+=",";             \
-        }                                                                                   \
-        if(!var.empty()) temp.pop_back();                                                   \
-        temp += "}";                                                                        \
-        return temp;                                                                        \
-    }
-    // 解释双模板STL容器类型宏
-    #define DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(type)                          \
-    template<class K,class V> inline std::string DescriptionType(type<K,V>&)            \
-    { return #type; }
-    // 解释数值对象值宏
-    #define DESCRIPTION_NUMBER_VALUE(type)                                              \
-    template<> inline std::string DescriptionValue(type& var)                           \
-    { return std::to_string(var); }
-    // 解释数值类型宏
-    #define DESCRIPTION_NUMBER_TYPE(type)                                               \
-    template<> inline std::string DescriptionType(type&) { return #type; }              \
-    template<> inline std::string DescriptionType(const type&) { return std::string("const") + #type; }
-    // 解释字符串型对象值宏
-    #define DESCRIPTION_STR_VALUE(type)                                                 \
-    template<> inline std::string DescriptionValue(type& var) { return var; }           \
-    // 解释字符串类型宏
-    #define DESCRIPTION_STR_TYPE(type)                                                  \
-    template<> inline std::string DescriptionType(type&) { return #type; }              \
-    template<> inline std::string DescriptionType(const type&) { return std::string("const") + #type; }
-    // 解释自定义类型宏
-    // class 需要自定义的类型
-    // object 自定义类型对象
-    // return std::string 用于描述对象类型、值的字符串。
-    #define MOLE_SELF_DEFINE(class,object)                                                      \
-    template<> inline std::string hzd::DescriptionType(class&) { return #class; }               \
-    template<> inline std::string hzd::DescriptionType(const class&) { return #class; }         \
-    template<> inline std::string hzd::DescriptionValue(class& object)
+    // 最基本引用规则
+    template<class T,typename std::enable_if<!std::is_const<T>::value && !is_string<T>::value && !has_iterator<T>::value && !has_stringfiy<T>::value,int>::type = 0>
+    std::string Describe(const T&) { return "__indescribable object__"; }
 
-    /* basic number type type */
-    DESCRIPTION_NUMBER_TYPE(int8_t)
-    DESCRIPTION_NUMBER_TYPE(int16_t)
-    DESCRIPTION_NUMBER_TYPE(int32_t)
-    DESCRIPTION_NUMBER_TYPE(int64_t)
-    DESCRIPTION_NUMBER_TYPE(uint8_t)
-    DESCRIPTION_NUMBER_TYPE(uint16_t)
-    DESCRIPTION_NUMBER_TYPE(uint32_t)
-    DESCRIPTION_NUMBER_TYPE(uint64_t)
-    DESCRIPTION_NUMBER_TYPE(float)
-    DESCRIPTION_NUMBER_TYPE(double)
-    DESCRIPTION_NUMBER_TYPE(long double)
-    DESCRIPTION_STR_TYPE(char*)
-    /* basic number type value */
-    DESCRIPTION_NUMBER_VALUE(int8_t)
-    DESCRIPTION_NUMBER_VALUE(int16_t)
-    DESCRIPTION_NUMBER_VALUE(int32_t)
-    DESCRIPTION_NUMBER_VALUE(int64_t)
-    DESCRIPTION_NUMBER_VALUE(uint8_t)
-    DESCRIPTION_NUMBER_VALUE(uint16_t)
-    DESCRIPTION_NUMBER_VALUE(uint32_t)
-    DESCRIPTION_NUMBER_VALUE(uint64_t)
-    DESCRIPTION_NUMBER_VALUE(float)
-    DESCRIPTION_NUMBER_VALUE(double)
-    DESCRIPTION_NUMBER_VALUE(long double)
-    DESCRIPTION_STR_VALUE(char*)
-    /* STL value & type */
-    DESCRIPTION_STR_TYPE(std::string)
-    DESCRIPTION_STR_VALUE(std::string)
-#ifdef _MSC_VER
-#ifdef _MAP_
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::map)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::map)
-#endif
-#ifdef _MULTIMAP_
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::multimap)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::multimap)
-#endif
-#ifdef _MULTISET_
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::multiset)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::multiset)
-#endif
-#ifdef _UNORDERED_MAP_
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::unordered_map)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::unordered_map)
-#endif
-#ifdef _LIST_
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::list)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::list)
-#endif
-#ifdef _VECTOR_
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::vector)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::vector)
-#endif
-#ifdef _DEQUE_
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::deque)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::deque)
-#endif
-#ifdef _SET_
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::set)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::set)
-#endif
-#ifdef _UNORDERED_SET_
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::unordered_set)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::unordered_set)
-#endif
-#elif __GNUC__
-#ifdef _STL_MAP_H
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::map)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::map)
-#endif
-#ifdef _STL_MULTIMAP_H
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::multimap)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::multimap)
-#endif
-#ifdef _STL_MULTISET_H
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::multiset)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::multiset)
-#endif
-#ifdef _UNORDERED_MAP_H
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_TYPE(std::unordered_map)
-    DESCRIPTION_STL_PAIR_TEMPLATE_CONTAINER_VALUE(std::unordered_map)
-#endif
-#ifdef _STL_LIST_H
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::list)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::list)
-#endif
-#ifdef _STL_VECTOR_H
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::vector)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::vector)
-#endif
-#ifdef _STL_DEQUE_H
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::deque)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::deque)
-#endif
-#ifdef _STL_SET_H
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::set)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::set)
-#endif
-#ifdef _UNORDERED_SET_H
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_TYPE(std::unordered_set)
-    DESCRIPTION_STL_SINGLE_TEMPLATE_CONTAINER_VALUE(std::unordered_set)
-#endif
-#endif
+    #define MOLE_DEFINE(CLASS,object)                   \
+    template<>                                          \
+    std::string hzd::Describe<CLASS>(const CLASS& object)
 
-#ifdef _WIN32
-#ifdef MOLE_EXPORTS
-#define MOLE_API __declspec(dllexport)
-#else
-#define MOLE_API __declspec(dllimport)
-#endif
-#else
-#define MOLE_API
-#endif
+    #ifdef _WIN32
+    #ifdef MOLE_EXPORTS
+    #define MOLE_API __declspec(dllexport)
+    #else
+    #define MOLE_API __declspec(dllimport)
+    #endif
+    #else
+    #define MOLE_API
+    #endif
+
     // 日志类
     class MOLE_API Mole {
     public:
@@ -468,7 +353,7 @@ namespace hzd {
     // FATAL级别日志
     // chan 日志频道名
     // content 日志内容
-    // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
+    // 可变参数 使用 MOLE_VAR(var) 将在日志中显示var的运行时类型与数值
 #define MOLE_FATAL(chan,content,...)                                                    \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
@@ -481,7 +366,7 @@ namespace hzd {
     // ERROR级别日志
     // chan 日志频道名
     // content 日志内容
-    // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
+    // 可变参数 使用 MOLE_VAR(var) 将在日志中显示var的运行时类型与数值
 #define MOLE_ERROR(chan,content,...)                                                    \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
@@ -494,7 +379,7 @@ namespace hzd {
     // WARN级别日志
     // chan 日志频道名
     // content 日志内容
-    // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
+    // 可变参数 使用 MOLE_VAR(var) 将在日志中显示var的运行时类型与数值
 #define MOLE_WARN(chan,content,...)                                                     \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
@@ -507,7 +392,7 @@ namespace hzd {
     // INFO级别日志
     // chan 日志频道名
     // content 日志内容
-    // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
+    // 可变参数 使用 MOLE_VAR(var) 将在日志中显示var的运行时类型与数值
 #define MOLE_INFO(chan,content,...)                                                     \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
@@ -520,7 +405,7 @@ namespace hzd {
     // TRACE级别日志
     // chan 日志频道名
     // content 日志内容
-    // 可变参数 使用 MOLE_PACK(var) 将在日志中显示var的运行时类型与数值
+    // 可变参数 使用 MOLE_VAR(var) 将在日志中显示var的运行时类型与数值
 #define MOLE_TRACE(chan,content,...)                                                    \
     do {                                                                                \
         if(!hzd::Mole::is_disable){                                                     \
@@ -531,7 +416,7 @@ namespace hzd {
         }                                                                               \
     }while(0)
     // 隐式构造Variable
-#define MOLE_VAR(variable) (hzd::DescriptionType(std::forward<decltype(variable)&>(variable)) + " " + std::string(#variable) + "=" + hzd::DescriptionValue(std::forward<decltype(variable)&>(variable))+ "\n")
+#define MOLE_VAR(variable) (std::string(#variable) + "=" + hzd::Describe(variable)+ "\n")
     // 设置日志频道最低等级
     // chan 日志频道名
     // level 等级字符串

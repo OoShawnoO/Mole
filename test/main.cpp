@@ -25,7 +25,7 @@ struct Test {
     Test() = default;
     Test(int _x,float _y,double _z) : x(_x),y(_y),z(_z) {}
 };
-MOLE_SELF_DEFINE(Test,test_object) {
+MOLE_DEFINE(Test,test_object) {
     std::string temp = "\n";
     temp += MOLE_VAR(test_object.x);
     temp += MOLE_VAR(test_object.y);

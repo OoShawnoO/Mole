@@ -174,7 +174,7 @@ namespace hzd {
         std::string variable_string;                                                                                \
         if(!variables.empty()){                                                                                     \
             variable_string += "----------------------------\n";                                                    \
-            for(const auto& v : variables ){                                                                        \
+            for(auto& v : variables ){                                                                        \
                 variable_string += std::move(v);                                                                    \
             }                                                                                                       \
             variable_string += "----------------------------\n";                                                    \

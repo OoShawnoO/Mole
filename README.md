@@ -121,117 +121,81 @@ usage in code
 #include <unordered_map>
 #include <vector>
 #include <string>
-#include <Mole/Mole.h>
+#include "../Mole.h"
 
 /* if you want custom class/struct to log,use macro MOLE_SELF_DEFINE() */
 /* 想要自定义类型用于记录 可以使用MOLE_SELF_DEFINE()宏*/
 struct Test {
-    int x = 1;
-    float y = 3.14;
-    double z = 1.414;
+int x = 1;
+float y = 3.14;
+double z = 1.414;
 
-    Test() = default;
-    Test(int _x,float _y,double _z) : x(_x),y(_y),z(_z) {}
+Test() = default;
+Test(int _x,float _y,double _z) : x(_x),y(_y),z(_z) {}
 };
-MOLE_SELF_DEFINE(Test,test_object) {
-    std::string temp = "\n";
-    temp += MOLE_VAR(test_object.x);
-    temp += MOLE_VAR(test_object.y);
-    temp += MOLE_VAR(test_object.z);
-    return temp;
+MOLE_DEFINE(Test,test_object) {
+std::string temp = "\n";
+temp += MOLE_VAR(test_object.x);
+temp += MOLE_VAR(test_object.y);
+temp += MOLE_VAR(test_object.z);
+return temp;
 }
 
 int main() {
-    /* if you dont want disable Mole before include Mole.h */
-    /* 如果你不希望在include Mole.h前#define MOLE_CLOSE就关闭Mole日志功能 */
-    /* 你可以使用如代码关闭*/
-    //    MOLE_DISABLE(true);
-    
-    /* if you want change log save path */
-    /* 如果你需要设置日志保存位置 */
-    MOLE_SAVE_PATH_PREFIX("path");
-    
-    /* set log channel whether save log file,default false */
-    /* 设置日志频道是否保存日志文件,默认 false */
-    MOLE_CHANNEL_SAVEABLE("channel_name",true);
-    
-    /* set log channel whether output log to terminal,default true */
-    /* 设置日志频道是否输出日志到终端,默认开启 */
-    MOLE_CHANNEL_SHOWLOG("channel_name",true);
-    
-    /* set log channel filter level */
-    /* 设置日志频道过滤等级 */
-    /* low to high TRACE -> INFO -> WARN -> ERROR -> FATAL */
-    /* 由低到高 TRACE -> INFO -> WARN -> ERROR -> FATAL */
-    MOLE_CHANNEL_LEVEL("channel_name","TRACE");
-    
-    /* log */
-    /* 打日志 */
-    /* level trace */
-    MOLE_TRACE("channel_name","xxx"); /* 2024-04-16 00:18:12 [TRACE] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:56] */
-    /* level info */
-    MOLE_INFO("channel_name","xxx");  /*2024-04-16 00:18:12 [INFO] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:58] */
-    /* level warn */
-    MOLE_WARN("channel_name","xxx");  /* 2024-04-16 00:18:12 [WARN] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:60] */
-    /* level error */
-    MOLE_ERROR("channel_name","xxx"); /* 2024-04-16 00:18:12 [ERROR] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:62] */
-    /* level fatal */
-    MOLE_FATAL("channel_name","xxx"); /* 2024-04-16 00:18:12 [FATAL] xxx => ["channel_name"] [/mnt/d/Projects/C++/Mole/test/main.cpp:64] */
-    
-    
-    int x = 1;
-    float y = 3.14;
-    double z = 1.414;
-    const char* cstr = "hello world!";
-    std::string stdstr = "hello world!";
-    std::vector<int> vec = {1,2,3,4,5};
-    std::unordered_map<int,std::string> umap  = { {1,"a"},{2,"b"} };
-    /* 日志记录变量 */
-    MOLE_INFO("channel_name","xxx",{
-    MOLE_VAR(x),MOLE_VAR(y),MOLE_VAR(z),MOLE_VAR(cstr),
-    MOLE_VAR(stdstr),MOLE_VAR(vec),MOLE_VAR(umap)
-    });
-    /*
-    2024-04-16 00:18:12 [INFO] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:74]
-    ----------------------------
-    int32_t x=1
-    float y=3.140000
-    double z=1.414000
-    const char* cstr=hello world!
-    std::string stdstr=hello world!
-    std::vector vec=[1,2,3,4,5,]
-    std::unordered_map umap={{2:b},{1:a},}
-    ---------------------------- 
-    */
-    
-    
-    /* MOLE_VAR() macro in order to describle variable,return std::string */
-    /* MOLE_VAR() 宏将对变量进行解释,返回值是std::string */
-    
-    /*
-     struct Test {
-        int x = 1;
-        float y = 3.14;
-        double z = 1.414;
-    };
-    MOLE_SELF_DEFINE(Test,test_object) {
-        std::string temp = "\n";
-        temp += MOLE_VAR(test_object.x);
-        temp += MOLE_VAR(test_object.y);
-        temp += MOLE_VAR(test_object.z);
-        return temp;
-    }
-     */
-    Test t{};
-    MOLE_INFO("channel_name","xxx",{ MOLE_VAR(t)});
-    /*
-     2024-04-16 00:18:12 [INFO] xxx => [channel_name] [/mnt/d/Projects/C++/Mole/test/main.cpp:84]
-        ----------------------------
-        Test t=
-        int32_t test_object.x=1
-        float test_object.y=3.140000
-        double test_object.z=1.414000
-        ----------------------------
-     */
+/* if you dont want disable Mole before include Mole.h */
+/* 如果你不希望在include Mole.h前#define MOLE_CLOSE就关闭Mole日志功能 */
+/* 你可以使用如代码关闭*/
+//    MOLE_DISABLE(true);
+
+/* set log channel whether save log file,default false */
+/* 设置日志频道是否保存日志文件,默认 false */
+MOLE_CHANNEL_SAVEABLE("channel_name",true);
+
+/* set log channel whether output log to terminal,default true */
+/* 设置日志频道是否输出日志到终端,默认开启 */
+MOLE_CHANNEL_SHOWLOG("channel_name",true);
+
+/* set log channel filter level */
+/* 设置日志频道过滤等级 */
+/* low to high TRACE -> INFO -> WARN -> ERROR -> FATAL */
+/* 由低到高 TRACE -> INFO -> WARN -> ERROR -> FATAL */
+MOLE_CHANNEL_LEVEL("channel_name","TRACE");
+
+/* log */
+/* 打日志 */
+/* level trace */
+MOLE_TRACE("channel_name","xxx");
+/* level info */
+MOLE_INFO("channel_name","xxx");
+/* level warn */
+MOLE_WARN("channel_name","xxx");
+/* level error */
+MOLE_ERROR("channel_name","xxx");
+/* level fatal */
+MOLE_FATAL("channel_name","xxx");
+
+int x = 1;
+float y = 3.14;
+double z = 1.414;
+const char* cstr = "hello world!";
+std::string stdstr = "hello world!";
+std::vector<int> vec = {1,2,3,4,5};
+std::unordered_map<int,std::string> umap  = { {1,"a"},{2,"b"} };
+/* 日志记录变量 */
+MOLE_INFO("channel_name","xxx",{
+MOLE_VAR(x),MOLE_VAR(y),MOLE_VAR(z),MOLE_VAR(str),MOLE_VAR(cstr),
+MOLE_VAR(stdstr),MOLE_VAR(vec),MOLE_VAR(umap)
+});
+
+/* MOLE_VAR() macro in order to describle variable,return std::string */
+/* MOLE_VAR() 宏将对变量进行解释,返回值是std::string */
+
+Test t{};
+
+MOLE_INFO("channel_name","xxx",{ MOLE_VAR(t)});
+
+const Test ct{1,2.0,3.0};
+
+MOLE_INFO("channel_name","xxx",{ MOLE_VAR(ct) });
 }
 ```
