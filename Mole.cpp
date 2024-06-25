@@ -26,7 +26,7 @@ namespace hzd {
     std::unordered_map<std::string,std::shared_ptr<Mole::LogChannel>>                   Mole::log_channel_map;
     std::vector<std::pair<std::thread,std::shared_ptr<hzd::Channel<Mole::LogItem>>>>    Mole::thread_group;
     std::vector<unsigned int>                                                           Mole::commit_log_channel_count;
-    std::string                                                                         Mole::save_path_prefix{"log"};
+    std::string                                                                         Mole::save_path_prefix{"log/"};
 #ifdef _WIN32
     std::mutex                                                                          color_cout_lock;
 #endif
@@ -48,20 +48,59 @@ namespace hzd {
     };
 
 #ifdef __linux__
+
+#define COLOR_RESET "\033[0m"
+#define COLOR_BLACK "\033[30m"   /* Black */
+#define COLOR_RED "\033[31m"    /* Red */
+#define COLOR_GREEN "\033[32m"   /* Green */
+#define COLOR_YELLOW "\033[33m"   /* Yellow */
+#define COLOR_BLUE "\033[34m"   /* Blue */
+#define COLOR_MAGENTA "\033[35m"   /* Magenta */
+#define COLOR_CYAN "\033[36m"    /* Cyan */
+#define COLOR_WHITE "\033[37m"   /* White */
+
+#define COLOR_BOLD_BLACK "\033[1m\033[30m"   /* Bold Black */
+#define COLOR_BOLD_RED "\033[1m\033[31m"   /* Bold Red */
+#define COLOR_BOLD_GREEN "\033[1m\033[32m"  /* Bold Green */
+#define COLOR_BOLD_YELLOW "\033[1m\033[33m"  /* Bold Yellow */
+#define COLOR_BOLD_BLUE "\033[1m\033[34m"   /* Bold Blue */
+#define COLOR_BOLD_MAGENTA "\033[1m\033[35m"   /* Bold Magenta */
+#define COLOR_BOLD_CYAN "\033[1m\033[36m"  /* Bold Cyan */
+#define COLOR_BOLD_WHITE "\033[1m\033[37m"   /* Bold White */
+
     const std::unordered_map<Mole::LogItem::LogLevel,const char*> Mole::color_scheme{
-            {Mole::LogItem::LogLevel::TRACE,"\033[36m"},
-            {Mole::LogItem::LogLevel::INFO,"\033[32m"},
-            {Mole::LogItem::LogLevel::WARN,"\033[33m"},
-            {Mole::LogItem::LogLevel::ERROR_,"\033[31m"},
-            {Mole::LogItem::LogLevel::FATAL,"\033[31m"}
+            {Mole::LogItem::LogLevel::TRACE,COLOR_CYAN},
+            {Mole::LogItem::LogLevel::INFO,COLOR_GREEN},
+            {Mole::LogItem::LogLevel::WARN,COLOR_YELLOW},
+            {Mole::LogItem::LogLevel::ERROR_,COLOR_RED},
+            {Mole::LogItem::LogLevel::FATAL,COLOR_BOLD_RED}
     };
 #elif _WIN32
+
+#define COLOR_BLACK "0"   /* Black */
+#define COLOR_RED "4"    /* Red */
+#define COLOR_GREEN "2"   /* Green */
+#define COLOR_YELLOW "6"   /* Yellow */
+#define COLOR_BLUE "1"   /* Blue */
+#define COLOR_MAGENTA "13"   /* Magenta */
+#define COLOR_CYAN "9"    /* Cyan */
+#define COLOR_WHITE "15"   /* White */
+
+#define COLOR_BOLD_BLACK "0"   /* Bold Black */
+#define COLOR_BOLD_RED "4"   /* Bold Red */
+#define COLOR_BOLD_GREEN "2"  /* Bold Green */
+#define COLOR_BOLD_YELLOW "6"  /* Bold Yellow */
+#define COLOR_BOLD_BLUE "1"   /* Bold Blue */
+#define COLOR_BOLD_MAGENTA "13"   /* Bold Magenta */
+#define COLOR_BOLD_CYAN "9"  /* Bold Cyan */
+#define COLOR_BOLD_WHITE "15"   /* Bold White */
+
     const std::unordered_map<Mole::LogItem::LogLevel,const char*> Mole::color_scheme{
-            {Mole::LogItem::LogLevel::TRACE,"1"},
-            {Mole::LogItem::LogLevel::INFO,"2"},
-            {Mole::LogItem::LogLevel::WARN,"6"},
+            {Mole::LogItem::LogLevel::TRACE,"13"},
+            {Mole::LogItem::LogLevel::INFO,COLOR_GREEN},
+            {Mole::LogItem::LogLevel::WARN,COLOR_YELLOW},
             {Mole::LogItem::LogLevel::ERROR_,"12"},
-            {Mole::LogItem::LogLevel::FATAL,"4"}
+            {Mole::LogItem::LogLevel::FATAL,COLOR_RED}
     };
 
     template<typename T>
