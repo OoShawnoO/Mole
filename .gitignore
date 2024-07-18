@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# cmake-cache
+cmake-build-*
+
+# test
+test
