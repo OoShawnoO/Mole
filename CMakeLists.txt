@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 # project
-project(Mole)
+project(Mole VERSION 1.0.0)
 # set c++ standard
 set(CMAKE_CXX_STANDARD 11)
 
@@ -11,21 +11,16 @@ endif()
 if(MSVC)
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMOLE_EXPORTS")
-
-add_subdirectory(3rdparty/fmt)
-add_subdirectory(test)
-
+# set cmake flag
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMOLE_EXPORTS -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os -g0")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
 # set SRC
-set(SRC src/Mole.cpp)
+set(SRC src/Mole.cpp src/format.cc src/os.cc)
 # set include path
 include_directories(include)
-include_directories(3rdparty/fmt/include)
 # add static library
 add_library(Mole STATIC ${SRC})
-
-target_link_libraries(Mole PRIVATE fmt::fmt)
 
 add_custom_target(
         uninstall
@@ -44,8 +39,6 @@ set_target_properties(
         PROPERTIES
         PUBLIC_HEADER include/Mole.h
 )
-
-set(INCLUDE_INSTALL_DIR include/)
 
 install(
         TARGETS Mole

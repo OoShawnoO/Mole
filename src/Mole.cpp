@@ -85,7 +85,7 @@ namespace hzd {
               vars(std::move(vars)), channel(channel) {}
 
 
-    Mole::Channel::Channel() {}
+    Mole::Channel::Channel() = default;
 
     void Mole::Channel::trace(std::string content, const char *file, uint32_t line, std::vector<std::string> &&vars) {
         if (level > Mole::Level::TRACE || !is_enable) return;
@@ -241,9 +241,7 @@ namespace hzd {
 
     }
 
-    void Mole::Channel::SetName(std::string name_) {
-        name = std::move(name_);
-    }
+    void Mole::Channel::SetName(std::string name_) { name = std::move(name_); }
 
     bool Mole::is_stop = false;
     bool Mole::is_enable = true;
@@ -326,13 +324,9 @@ namespace hzd {
         Mole::prefix = prefix_;
     }
 
-    void Mole::enable() {
-        Mole::is_enable = true;
-    }
+    void Mole::enable() { Mole::is_enable = true; }
 
-    void Mole::disable() {
-        Mole::is_enable = false;
-    }
+    void Mole::disable() { Mole::is_enable = false; }
 
     void Mole::log(
             Mole::Level level,
@@ -341,10 +335,9 @@ namespace hzd {
             uint32_t line,
             std::vector<std::string> &&vars
     ) {
-        if (!Mole::is_enable) {
-            return;
-        }
-        channel("main").log(level, std::move(content), file, line, std::move(vars));
+        if (!Mole::is_enable) { return; }
+        static auto &logger = channel("main");
+        logger.log(level, std::move(content), file, line, std::move(vars));
     }
 
 #define ERROR 0
