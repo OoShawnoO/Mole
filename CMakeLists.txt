@@ -22,6 +22,9 @@ include_directories(include)
 # add static library
 add_library(Mole STATIC ${SRC})
 
+#add_executable(test test/main.cpp)
+#target_link_libraries(test Mole)
+
 add_custom_target(
         uninstall
         COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -P "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake"

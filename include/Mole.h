@@ -167,14 +167,14 @@ namespace hzd {
     // 解释方法
     // 简单变量字符串规则
     template<class T>
-    struct has_stringfiy {
+    struct to_string_able {
     private:
         template<class U>
-        static auto has(int x) -> decltype(std::to_string(std::declval<U>()), std::true_type());
+        __attribute__((unused)) static auto
+        has(int) -> decltype(std::to_string(std::declval<U>()), std::true_type()) { return {}; };
 
-        template<class U>
-        static std::false_type has(...);
-
+        template<class>
+        static std::false_type has(...) { return {}; };
     public:
         static constexpr bool value = decltype(has<T>(0))::value;
     };
@@ -183,11 +183,10 @@ namespace hzd {
     struct is_string {
     private:
         template<class U>
-        static auto has(int x) -> decltype(std::string(std::declval<U>()), std::true_type());
+        __attribute__((unused)) static auto has(int) -> decltype(std::string(std::declval<U>()), std::true_type()) { return {}; };
 
-        template<class U>
-        static std::false_type has(...);
-
+        template<class>
+        static std::false_type has(...) { return {}; };
     public:
         static constexpr bool value = decltype(has<T>(0))::value;
     };
@@ -197,11 +196,10 @@ namespace hzd {
     struct has_iterator {
     private:
         template<class U>
-        static auto has(int x) -> decltype(std::declval<U>().cbegin(), std::true_type());
+        static auto has(int) -> decltype(std::declval<U>().cbegin(), std::true_type()) { return {}; };
 
-        template<class U>
-        static std::false_type has(...);
-
+        template<class>
+        static std::false_type has(...) { return {}; };
     public:
         static constexpr bool value = decltype(has<T>(0))::value;
     };
@@ -211,12 +209,12 @@ namespace hzd {
     std::string Describe(const T &value) { return value; }
 
     // 限制字符串化规则
-    template<class T, typename std::enable_if<has_stringfiy<T>::value, int>::type = 0>
+    template<class T, typename std::enable_if<to_string_able<T>::value, int>::type = 0>
     std::string Describe(const T &value) { return std::to_string(value); }
 
     // std::pair规则
     template<class K, class V, typename std::enable_if<
-            !has_iterator<std::pair<K, V>>::value && !has_stringfiy<std::pair<K, V>>::value, int>::type = 0>
+            !has_iterator<std::pair<K, V>>::value && !to_string_able<std::pair<K, V>>::value, int>::type = 0>
     std::string Describe(const std::pair<K, V> &value) {
         return "{" + Describe(value.first) + "," + Describe(value.second) + "}";
     }
@@ -236,7 +234,7 @@ namespace hzd {
     // 最基本引用规则
     template<class T, typename std::enable_if<
             !std::is_const<T>::value && !is_string<T>::value && !has_iterator<T>::value &&
-            !has_stringfiy<T>::value, int>::type = 0>
+            !to_string_able<T>::value, int>::type = 0>
     std::string Describe(const T &) { return "__indescribable object__"; }
 
 #define MOLE_DEFINE(CLASS, object)                   \
@@ -253,7 +251,7 @@ namespace hzd {
 #define MOLE_API
 #endif
 
-#define CACHE_BUF_SIZE (4 * 1024 * 1024)
+#define CACHE_BUF_SIZE (8 * 1024)
 
     class MOLE_API Mole {
 
@@ -269,6 +267,69 @@ namespace hzd {
             ERROR,          // 错误级日志
             FATAL           // 严重错误级日志
         };
+
+        ~Mole();
+
+        // 追踪日志
+        static void trace(
+                std::string content,
+                const char *file = nullptr,
+                uint32_t line = 0,
+                std::vector<std::string> &&vars = {}
+        );
+
+        // 通知日志
+        static void info(
+                std::string content,
+                const char *file = nullptr,
+                uint32_t line = 0,
+                std::vector<std::string> &&vars = {}
+        );
+
+        // 调试日志
+        static void debug(
+                std::string content,
+                const char *file = nullptr,
+                uint32_t line = 0,
+                std::vector<std::string> &&vars = {}
+        );
+
+        // 警告日志
+        static void warn(
+                std::string content,
+                const char *file = nullptr,
+                uint32_t line = 0,
+                std::vector<std::string> &&vars = {}
+        );
+
+        // 错误日志
+        static void error(
+                std::string content,
+                const char *file = nullptr,
+                uint32_t line = 0,
+                std::vector<std::string> &&vars = {}
+        );
+
+        // 严重错误日志
+        static void fatal(
+                std::string content,
+                const char *file = nullptr,
+                uint32_t line = 0,
+                std::vector<std::string> &&vars = {}
+        );
+
+        // 获取日志频道
+        static Channel &channel(const std::string &name);
+
+        // 设置日志保存前缀路径
+        static void save_prefix(const std::string &prefix);
+
+        // 设置日志为可用
+        static void enable();
+
+        // 设置日志为不可用
+        static void disable();
+
     private:
         struct Meta {
             // 日志等级
@@ -318,28 +379,52 @@ namespace hzd {
             ~Channel() = default;
 
             // 追踪日志
-            void trace(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                       std::vector<std::string> &&vars = {});
+            void trace(
+                    std::string content,
+                    const char *file = nullptr,
+                    uint32_t line = 0,
+                    std::vector<std::string> &&vars = {}
+            );
 
             // 通知日志
-            void info(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                      std::vector<std::string> &&vars = {});
+            void info(
+                    std::string content,
+                    const char *file = nullptr,
+                    uint32_t line = 0,
+                    std::vector<std::string> &&vars = {}
+            );
 
             // 调试日志
-            void debug(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                       std::vector<std::string> &&vars = {});
+            void debug(
+                    std::string content,
+                    const char *file = nullptr,
+                    uint32_t line = 0,
+                    std::vector<std::string> &&vars = {}
+            );
 
             // 警告日志
-            void warn(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                      std::vector<std::string> &&vars = {});
+            void warn(
+                    std::string content,
+                    const char *file = nullptr,
+                    uint32_t line = 0,
+                    std::vector<std::string> &&vars = {}
+            );
 
             // 错误日志
-            void error(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                       std::vector<std::string> &&vars = {});
+            void error(
+                    std::string content,
+                    const char *file = nullptr,
+                    uint32_t line = 0,
+                    std::vector<std::string> &&vars = {}
+            );
 
             // 严重错误日志
-            void fatal(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                       std::vector<std::string> &&vars = {});
+            void fatal(
+                    std::string content,
+                    const char *file = nullptr,
+                    uint32_t line = 0,
+                    std::vector<std::string> &&vars = {}
+            );
 
             // 日志过滤级别设置
             void SetLevel(Level level);
@@ -354,72 +439,58 @@ namespace hzd {
             void SetName(std::string name);
 
         private:
+            // 日志通道名
             std::string name{};
+            // 日志过滤等级
             Level level{Level::SILENCE};
-
+            // 日志文件指针
             FILE *fp{nullptr};
+            // 日志写游标
             size_t write_cursor{0};
+            // 日志写缓冲区
             char write_buffer[CACHE_BUF_SIZE]{};
-
+            // 是否允许本通道保存文件
             bool is_save{false};
+            // 是否允许本通道输出到控制台
             bool is_console{true};
 
             // 写日志
             void writeMeta(Meta &&meta);
 
             // 日志接口
-            void log(Level level, std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                     std::vector<std::string> &&vars = {});
+            void log(
+                    Level level,
+                    std::string content,
+                    const char *file = __FILE__,
+                    uint32_t line = __LINE__,
+                    std::vector<std::string> &&vars = {}
+            );
         };
 
+        // 日志结束标志
         static bool is_stop;
+        // 日志可用标志
         static bool is_enable;
+        // 日志队列
         static Chan chan;
+        // 日志线程
         static std::thread thread;
+        // 日志文件保存前缀
         static std::string prefix;
-
+        // 日志通道映射
         static std::unordered_map<std::string, Mole::Channel> channels;
-    public:
-        ~Mole();
 
-        // 追踪日志
-        static void trace(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                          std::vector<std::string> &&vars = {});
-
-        // 通知日志
-        static void info(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                         std::vector<std::string> &&vars = {});
-
-        // 调试日志
-        static void debug(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                          std::vector<std::string> &&vars = {});
-
-        // 警告日志
-        static void warn(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                         std::vector<std::string> &&vars = {});
-
-        // 错误日志
-        static void error(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                          std::vector<std::string> &&vars = {});
-
-        // 严重错误日志
-        static void fatal(std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                          std::vector<std::string> &&vars = {});
-
-        static Channel &channel(const std::string &name);
-
-        static void save_prefix(const std::string &prefix);
-
-        static void enable();
-
-        static void disable();
-
-    private:
+        // 日志loop
         static void loop();
 
         // 日志接口
-        static void log(Level level, std::string content, const char *file = __FILE__, uint32_t line = __LINE__,
-                        std::vector<std::string> &&vars = {});
+        static void log(
+                Level level,
+                std::string content,
+                const char *file = __FILE__,
+                uint32_t line = __LINE__,
+                std::vector<std::string> &&vars = {}
+        );
     };
 
 #ifdef MOLE_CLOSE
@@ -434,7 +505,10 @@ namespace hzd {
 #else
 #define MOLE_DISABLE(bool)                                                          \
     do {                                                                            \
-        hzd::Mole::disable();                                               \
+        if(bool)                                                                    \
+            hzd::Mole::disable();                                                   \
+        else                                                                        \
+            hzd::Mole::enable();                                                    \
     }while(0)
     // FATAL级别日志
     // chan 日志频道名
@@ -468,6 +542,14 @@ namespace hzd {
     do {                                                                                \
         hzd::Mole::channel(chan).info(content,__FILE__,__LINE__,##__VA_ARGS__);                                                                           \
     }while(0)
+    // DEBUG级别日志
+    // chan 日志频道名
+    // content 日志内容
+    // 可变参数 使用 MOLE_VAR(var) 将在日志中显示var的运行时类型与数值
+#define MOLE_DEBUG(chan, content, ...)                                                    \
+    do {                                                                                \
+        hzd::Mole::channel(chan).debug(content,__FILE__,__LINE__,##__VA_ARGS__);                                                                          \
+    }while(0)
     // TRACE级别日志
     // chan 日志频道名
     // content 日志内容
@@ -500,7 +582,7 @@ namespace hzd {
 
 #define MOLE_SAVE_PATH_PREFIX(path)                                                     \
     do {                                                                                \
-        hzd::Mole::set_prefix = path;   \
+        hzd::Mole::save_prefix(path);   \
     }while(0)
 
 #endif

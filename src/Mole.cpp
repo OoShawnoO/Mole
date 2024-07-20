@@ -133,15 +133,12 @@ namespace hzd {
         level = level_;
     }
 
-    void Mole::Channel::SetSave(bool is_save_) {
-        is_save = is_save_;
-    }
+    void Mole::Channel::SetSave(bool is_save_) { log(Mole::Level::SILENCE,"save=" + std::to_string(is_save_)); }
 
-    void Mole::Channel::SetConsole(bool is_console_) {
-        is_console = is_console_;
-    }
+    void Mole::Channel::SetConsole(bool is_console_) { log(Mole::Level::SILENCE,"console=" + std::to_string(is_console_)); }
 
     void Mole::Channel::writeMeta(Mole::Meta &&meta) {
+
         if (!meta.channel->is_console && !meta.channel->is_save) return;
 
         char time_str[20] = {0};
@@ -156,29 +153,50 @@ namespace hzd {
         ss << meta.tid;
         auto tid = ss.str();
 
-        std::string var_str;
-        for (auto &&var: meta.vars) {
-            var_str += "[variable] " + var + "\n";
-        }
-
-        std::string meta_str = fmt::format(
-                "{} [{:^10}] {} [{}] [{}:{} thread:{}]\n{}",
-                time_str,
-                meta.level == Mole::Level::TRACE ? "TRACE" :
-                meta.level == Mole::Level::INFO ? "INFO" :
-                meta.level == Mole::Level::DEBUG ? "DEBUG" :
-                meta.level == Mole::Level::WARN ? "WARN" :
-                meta.level == Mole::Level::ERROR ? "ERROR" :
-                meta.level == Mole::Level::FATAL ? "FATAL" : "",
-                meta.content,
-                meta.channel->name,
-                meta.file,
-                meta.line,
-                tid,
-                var_str
-        );
-
         if (meta.channel->is_save) {
+
+            std::string var_str;
+            for (auto &&var: meta.vars) {
+                var_str += "[variable] " + var + "\n";
+            }
+
+            std::string meta_str;
+
+            if(meta.file){
+                meta_str = fmt::format(
+                        "{} [{:^7}] {} [{}] [{}:{} thread:{}]\n{}",
+                        time_str,
+                        meta.level == Mole::Level::TRACE ? "TRACE" :
+                        meta.level == Mole::Level::INFO ? "INFO" :
+                        meta.level == Mole::Level::DEBUG ? "DEBUG" :
+                        meta.level == Mole::Level::WARN ? "WARN" :
+                        meta.level == Mole::Level::ERROR ? "ERROR" :
+                        meta.level == Mole::Level::FATAL ? "FATAL" : "",
+                        meta.content,
+                        meta.channel->name,
+                        meta.file,
+                        meta.line,
+                        tid,
+                        var_str
+                );
+            }else{
+                meta_str = fmt::format(
+                        "{} [{:^7}] {} [{}] [thread:{}]\n{}",
+                        time_str,
+                        meta.level == Mole::Level::TRACE ? "TRACE" :
+                        meta.level == Mole::Level::INFO ? "INFO" :
+                        meta.level == Mole::Level::DEBUG ? "DEBUG" :
+                        meta.level == Mole::Level::WARN ? "WARN" :
+                        meta.level == Mole::Level::ERROR ? "ERROR" :
+                        meta.level == Mole::Level::FATAL ? "FATAL" : "",
+                        meta.content,
+                        meta.channel->name,
+                        tid,
+                        var_str
+                );
+            }
+
+
             if (meta.channel->fp == nullptr) {
                 meta.channel->fp = fopen((prefix + meta.channel->name + ".log").c_str(), "ab");
                 if (meta.channel->fp == nullptr) {
@@ -195,45 +213,82 @@ namespace hzd {
         }
 
         if (meta.channel->is_console) {
-
-            fmt::println(
-                    "{} [{:^7}] {} |{}| [{}:{} thread:{}]",
-                    time_str,
-                    fmt::styled(
-                            (
-                                    meta.level == Mole::Level::TRACE ? "TRACE" :
-                                    meta.level == Mole::Level::INFO ? "INFO" :
-                                    meta.level == Mole::Level::DEBUG ? "DEBUG" :
-                                    meta.level == Mole::Level::WARN ? "WARN" :
-                                    meta.level == Mole::Level::ERROR ? "ERROR" :
-                                    meta.level == Mole::Level::FATAL ? "FATAL" : ""
-                            ),
-                            (
-                                    meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
-                                                                       fmt::bg(fmt::color::gray) :
-                                    meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
-                                                                      fmt::bg(fmt::color::green) :
-                                    meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
-                                                                       fmt::bg(fmt::color::blue) :
-                                    meta.level == Mole::Level::WARN ? fmt::fg(fmt::color::black) |
-                                                                      fmt::bg(fmt::color::yellow) :
-                                    meta.level == Mole::Level::ERROR ? fmt::fg(fmt::color::black) |
-                                                                       fmt::bg(fmt::color::red) :
-                                    meta.level == Mole::Level::FATAL ? fmt::fg(fmt::color::black) |
-                                                                       fmt::bg(fmt::color::magenta) :
-                                    fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
-                            )
-                    ),
-                    meta.content,
-                    fmt::styled(meta.channel->name, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::green)),
-                    meta.file,
-                    meta.line,
-                    tid
-            );
+            if(meta.file) {
+                fmt::println(
+                        "{} [{:^7}] {} |{}| [{}:{} thread:{}]",
+                        time_str,
+                        fmt::styled(
+                                (
+                                        meta.level == Mole::Level::TRACE ? "TRACE" :
+                                        meta.level == Mole::Level::INFO ? "INFO" :
+                                        meta.level == Mole::Level::DEBUG ? "DEBUG" :
+                                        meta.level == Mole::Level::WARN ? "WARN" :
+                                        meta.level == Mole::Level::ERROR ? "ERROR" :
+                                        meta.level == Mole::Level::FATAL ? "FATAL" : ""
+                                ),
+                                (
+                                        meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::gray) :
+                                        meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
+                                                                          fmt::bg(fmt::color::green) :
+                                        meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::blue) :
+                                        meta.level == Mole::Level::WARN ? fmt::fg(fmt::color::black) |
+                                                                          fmt::bg(fmt::color::yellow) :
+                                        meta.level == Mole::Level::ERROR ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::red) :
+                                        meta.level == Mole::Level::FATAL ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::magenta) :
+                                        fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
+                                )
+                        ),
+                        meta.content,
+                        fmt::styled(meta.channel->name, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::green)),
+                        meta.file,
+                        meta.line,
+                        tid
+                );
+            }
+            else{
+                fmt::println(
+                        "{} [{:^7}] {} |{}| [thread:{}]",
+                        time_str,
+                        fmt::styled(
+                                (
+                                        meta.level == Mole::Level::TRACE ? "TRACE" :
+                                        meta.level == Mole::Level::INFO ? "INFO" :
+                                        meta.level == Mole::Level::DEBUG ? "DEBUG" :
+                                        meta.level == Mole::Level::WARN ? "WARN" :
+                                        meta.level == Mole::Level::ERROR ? "ERROR" :
+                                        meta.level == Mole::Level::FATAL ? "FATAL" : ""
+                                ),
+                                (
+                                        meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::gray) :
+                                        meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
+                                                                          fmt::bg(fmt::color::green) :
+                                        meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::blue) :
+                                        meta.level == Mole::Level::WARN ? fmt::fg(fmt::color::black) |
+                                                                          fmt::bg(fmt::color::yellow) :
+                                        meta.level == Mole::Level::ERROR ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::red) :
+                                        meta.level == Mole::Level::FATAL ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::magenta) :
+                                        fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
+                                )
+                        ),
+                        meta.content,
+                        fmt::styled(meta.channel->name, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::green)),
+                        tid
+                );
+            }
 
             for (auto &var: meta.vars) {
-                fmt::println("[ variable ] {}",
-                             fmt::styled(var, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::dark_cyan)));
+                fmt::println(
+                        "[ variable ] {}",
+                         fmt::styled(var, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::dark_cyan))
+                );
             }
 
 
@@ -270,10 +325,28 @@ namespace hzd {
             if (!chan.Pop(meta)) {
                 break;
             }
+            if(meta.level == Level::SILENCE) {
+                if(meta.content == "save=0") meta.channel->is_save = false;
+                else if(meta.content == "save=1") meta.channel->is_save = true;
+                else if(meta.content == "console=0") meta.channel->is_console = false;
+                else if(meta.content == "console=1") meta.channel->is_console = true;
+                else if(meta.content == "enable") is_enable = true;
+                else if(meta.content == "disable") is_enable = false;
+                continue;
+            }
             meta.channel->writeMeta(std::move(meta));
         }
         while (!chan.IsEmpty()) {
             if (chan.Pop(meta)) {
+                if(meta.level == Level::SILENCE) {
+                    if(meta.content == "save=0") meta.channel->is_save = false;
+                    else if(meta.content == "save=1") meta.channel->is_save = true;
+                    else if(meta.content == "console=0") meta.channel->is_console = false;
+                    else if(meta.content == "console=1") meta.channel->is_console = true;
+                    else if(meta.content == "enable") is_enable = true;
+                    else if(meta.content == "disable") is_enable = false;
+                    continue;
+                }
                 meta.channel->writeMeta(std::move(meta));
             }
         }
@@ -320,13 +393,11 @@ namespace hzd {
         return channel_ref;
     }
 
-    void Mole::save_prefix(const std::string &prefix_) {
-        Mole::prefix = prefix_;
-    }
+    void Mole::save_prefix(const std::string &prefix_) { Mole::prefix = prefix_; }
 
-    void Mole::enable() { Mole::is_enable = true; }
+    void Mole::enable() { log(Level::SILENCE,"enable"); }
 
-    void Mole::disable() { Mole::is_enable = false; }
+    void Mole::disable() { log(Level::SILENCE,"disable"); }
 
     void Mole::log(
             Mole::Level level,
