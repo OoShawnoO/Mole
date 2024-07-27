@@ -80,9 +80,8 @@ namespace hzd {
             std::thread::id tid,
             std::vector<std::string> vars,
             Mole::Channel *channel
-    )
-            : level(level), content(std::move(content)), time(time), file(file), line(line), tid(tid),
-              vars(std::move(vars)), channel(channel) {}
+    ) : level(level), content(std::move(content)), time(time), file(file), line(line), tid(tid), vars(std::move(vars)),
+        channel(channel) {}
 
 
     Mole::Channel::Channel() = default;
@@ -138,6 +137,16 @@ namespace hzd {
     void Mole::Channel::SetConsole(bool is_console_) { log(Mole::Level::SILENCE,"console=" + std::to_string(is_console_)); }
 
     void Mole::Channel::writeMeta(Mole::Meta &&meta) {
+        if (meta.level == Level::SILENCE) {
+            if (meta.content == "save=0") meta.channel->is_save = false;
+            else if (meta.content == "save=1") meta.channel->is_save = true;
+            else if (meta.content == "console=0") meta.channel->is_console = false;
+            else if (meta.content == "console=1") meta.channel->is_console = true;
+            else if (meta.content == "enable") is_enable = true;
+            else if (meta.content == "disable") is_enable = false;
+
+            return;
+        }
 
         if (!meta.channel->is_console && !meta.channel->is_save) return;
 
@@ -179,7 +188,7 @@ namespace hzd {
                         tid,
                         var_str
                 );
-            }else{
+            } else {
                 meta_str = fmt::format(
                         "{} [{:^7}] {} [{}] [thread:{}]\n{}",
                         time_str,
@@ -197,19 +206,23 @@ namespace hzd {
             }
 
 
-            if (meta.channel->fp == nullptr) {
-                meta.channel->fp = fopen((prefix + meta.channel->name + ".log").c_str(), "ab");
-                if (meta.channel->fp == nullptr) {
+            if (!meta.channel->fp) {
+                if (!meta.channel->openLogFile()) {
                     fmt::print("Failed to open file: {}", meta.channel->name + ".log");
                 }
             }
+
             if (write_cursor + meta_str.size() >= CACHE_BUF_SIZE) {
                 fwrite(write_buffer, write_cursor, 1, fp);
-                memset(write_buffer, 0, sizeof(write_buffer));
+                write_buffer[0] = '\0';
                 write_cursor = 0;
             }
-            strcat(write_buffer, meta_str.c_str());
-            write_cursor += meta_str.size();
+            if (meta_str.size() > CACHE_BUF_SIZE) {
+                fwrite(meta_str.c_str(), meta_str.size(), 1, fp);
+            } else {
+                strcat(write_buffer, meta_str.c_str());
+                write_cursor += meta_str.size();
+            }
         }
 
         if (meta.channel->is_console) {
@@ -278,6 +291,31 @@ namespace hzd {
                                         fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
                                 )
                         ),
+                        fmt::styled(
+                                (
+                                        meta.level == Mole::Level::TRACE ? "TRACE" :
+                                        meta.level == Mole::Level::INFO ? "INFO" :
+                                        meta.level == Mole::Level::DEBUG ? "DEBUG" :
+                                        meta.level == Mole::Level::WARN ? "WARN" :
+                                        meta.level == Mole::Level::ERROR ? "ERROR" :
+                                        meta.level == Mole::Level::FATAL ? "FATAL" : ""
+                                ),
+                                (
+                                        meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::gray) :
+                                        meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
+                                                                          fmt::bg(fmt::color::green) :
+                                        meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::blue) :
+                                        meta.level == Mole::Level::WARN ? fmt::fg(fmt::color::black) |
+                                                                          fmt::bg(fmt::color::yellow) :
+                                        meta.level == Mole::Level::ERROR ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::red) :
+                                        meta.level == Mole::Level::FATAL ? fmt::fg(fmt::color::black) |
+                                                                           fmt::bg(fmt::color::magenta) :
+                                        fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
+                                )
+                        ),
                         meta.content,
                         fmt::styled(meta.channel->name, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::green)),
                         tid
@@ -297,6 +335,24 @@ namespace hzd {
     }
 
     void Mole::Channel::SetName(std::string name_) { name = std::move(name_); }
+
+    void Mole::Channel::SetPath(std::string path_) { path = std::move(path_); }
+
+    bool Mole::Channel::openLogFile() {
+        if (fp) {
+            fclose(fp);
+            fp = nullptr;
+        }
+
+        if (path.empty()) {
+            path = Mole::prefix + name + ".log";
+        }
+
+        fp = fopen(path.c_str(), "ab");
+        return fp != nullptr;
+    }
+
+
 
     bool Mole::is_stop = false;
     bool Mole::is_enable = true;
@@ -322,36 +378,16 @@ namespace hzd {
 #endif
         Meta meta;
         while (!is_stop) {
-            if (!chan.Pop(meta)) {
-                break;
-            }
-            if(meta.level == Level::SILENCE) {
-                if(meta.content == "save=0") meta.channel->is_save = false;
-                else if(meta.content == "save=1") meta.channel->is_save = true;
-                else if(meta.content == "console=0") meta.channel->is_console = false;
-                else if(meta.content == "console=1") meta.channel->is_console = true;
-                else if(meta.content == "enable") is_enable = true;
-                else if(meta.content == "disable") is_enable = false;
-                continue;
-            }
+            if (!chan.Pop(meta)) { break; }
             meta.channel->writeMeta(std::move(meta));
         }
         while (!chan.IsEmpty()) {
             if (chan.Pop(meta)) {
-                if(meta.level == Level::SILENCE) {
-                    if(meta.content == "save=0") meta.channel->is_save = false;
-                    else if(meta.content == "save=1") meta.channel->is_save = true;
-                    else if(meta.content == "console=0") meta.channel->is_console = false;
-                    else if(meta.content == "console=1") meta.channel->is_console = true;
-                    else if(meta.content == "enable") is_enable = true;
-                    else if(meta.content == "disable") is_enable = false;
-                    continue;
-                }
                 meta.channel->writeMeta(std::move(meta));
             }
         }
         for (auto &channel: hzd::Mole::channels) {
-            if (channel.second.fp != nullptr) {
+            if (channel.second.fp) {
                 if (channel.second.write_cursor != 0) {
                     fwrite(channel.second.write_buffer, channel.second.write_cursor, 1, channel.second.fp);
                     channel.second.write_cursor = 0;

@@ -183,7 +183,8 @@ namespace hzd {
     struct is_string {
     private:
         template<class U>
-        __attribute__((unused)) static auto has(int) -> decltype(std::string(std::declval<U>()), std::true_type()) { return {}; };
+        __attribute__((unused)) static auto
+        has(int) -> decltype(std::string(std::declval<U>()), std::true_type()) { return {}; };
 
         template<class>
         static std::false_type has(...) { return {}; };
@@ -251,7 +252,7 @@ namespace hzd {
 #define MOLE_API
 #endif
 
-#define CACHE_BUF_SIZE (8 * 1024)
+#define CACHE_BUF_SIZE (16 * 1024)
 
     class MOLE_API Mole {
 
@@ -259,7 +260,7 @@ namespace hzd {
 
     public:
         enum class Level : uint8_t {
-            SILENCE = 0,    // 关闭所有日志
+            SILENCE = 0,    // 静默级日志
             TRACE,          // 追踪级日志
             DEBUG,          // 调试级日志
             INFO,           // 信息级日志
@@ -438,9 +439,14 @@ namespace hzd {
             // 设置日志通道名
             void SetName(std::string name);
 
+            // 设置日志存储路径
+            void SetPath(std::string path);
+
         private:
             // 日志通道名
             std::string name{};
+            // 日志存储路径
+            std::string path{};
             // 日志过滤等级
             Level level{Level::SILENCE};
             // 日志文件指针
@@ -456,6 +462,9 @@ namespace hzd {
 
             // 写日志
             void writeMeta(Meta &&meta);
+
+            // 打开日志文件
+            bool openLogFile();
 
             // 日志接口
             void log(
