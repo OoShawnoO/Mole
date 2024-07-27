@@ -21,6 +21,7 @@ set(SRC src/Mole.cpp src/format.cc src/os.cc)
 include_directories(include)
 # add static library
 add_library(Mole STATIC ${SRC})
+add_library(Mole.share SHARED ${SRC})
 
 
 add_custom_target(

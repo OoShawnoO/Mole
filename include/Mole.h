@@ -326,10 +326,10 @@ namespace hzd {
         static void save_prefix(const std::string &prefix);
 
         // 设置日志为可用
-        static void enable();
+        static void enable(bool is_enable);
 
-        // 设置日志为不可用
-        static void disable();
+        // 设置所有日志控制台输出状态
+        static void console(bool is_console);
 
     private:
         struct Meta {
@@ -480,6 +480,8 @@ namespace hzd {
         static bool is_stop;
         // 日志可用标志
         static bool is_enable;
+        // 日志控制台输出标志
+        static bool is_console;
         // 日志队列
         static Chan chan;
         // 日志线程

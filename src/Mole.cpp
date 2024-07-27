@@ -144,11 +144,13 @@ namespace hzd {
             else if (meta.content == "console=1") meta.channel->is_console = true;
             else if (meta.content == "enable") is_enable = true;
             else if (meta.content == "disable") is_enable = false;
+            else if (meta.content == "console=0") is_console = false;
+            else if (meta.content == "console=1") is_console = true;
 
             return;
         }
 
-        if (!meta.channel->is_console && !meta.channel->is_save) return;
+        if ((!meta.channel->is_console || !is_console) && !meta.channel->is_save) return;
 
         char time_str[20] = {0};
         std::strftime(
@@ -173,7 +175,7 @@ namespace hzd {
 
             if(meta.file){
                 meta_str = fmt::format(
-                        "{} [{:^7}] {} [{}] [{}:{} thread:{}]\n{}",
+                        "{} [{:^7}]|{}| {} [{}:{} thread:{}]\n{}",
                         time_str,
                         meta.level == Mole::Level::TRACE ? "TRACE" :
                         meta.level == Mole::Level::INFO ? "INFO" :
@@ -181,8 +183,8 @@ namespace hzd {
                         meta.level == Mole::Level::WARN ? "WARN" :
                         meta.level == Mole::Level::ERROR ? "ERROR" :
                         meta.level == Mole::Level::FATAL ? "FATAL" : "",
-                        meta.content,
                         meta.channel->name,
+                        meta.content,
                         meta.file,
                         meta.line,
                         tid,
@@ -190,7 +192,7 @@ namespace hzd {
                 );
             } else {
                 meta_str = fmt::format(
-                        "{} [{:^7}] {} [{}] [thread:{}]\n{}",
+                        "{} [{:^7}]|{}| {} [thread:{}]\n{}",
                         time_str,
                         meta.level == Mole::Level::TRACE ? "TRACE" :
                         meta.level == Mole::Level::INFO ? "INFO" :
@@ -198,8 +200,8 @@ namespace hzd {
                         meta.level == Mole::Level::WARN ? "WARN" :
                         meta.level == Mole::Level::ERROR ? "ERROR" :
                         meta.level == Mole::Level::FATAL ? "FATAL" : "",
-                        meta.content,
                         meta.channel->name,
+                        meta.content,
                         tid,
                         var_str
                 );
@@ -225,10 +227,10 @@ namespace hzd {
             }
         }
 
-        if (meta.channel->is_console) {
+        if (is_console && meta.channel->is_console) {
             if(meta.file) {
                 fmt::println(
-                        "{} [{:^7}] {} |{}| [{}:{} thread:{}]",
+                        "{} [{:^7}]|{}| {} [{}:{} thread:{}]",
                         time_str,
                         fmt::styled(
                                 (
@@ -241,7 +243,7 @@ namespace hzd {
                                 ),
                                 (
                                         meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
-                                                                           fmt::bg(fmt::color::gray) :
+                                                                           fmt::bg(fmt::color::cyan) :
                                         meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
                                                                           fmt::bg(fmt::color::green) :
                                         meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
@@ -255,8 +257,8 @@ namespace hzd {
                                         fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
                                 )
                         ),
-                        meta.content,
                         fmt::styled(meta.channel->name, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::green)),
+                        meta.content,
                         meta.file,
                         meta.line,
                         tid
@@ -264,7 +266,7 @@ namespace hzd {
             }
             else{
                 fmt::println(
-                        "{} [{:^7}] {} |{}| [thread:{}]",
+                        "{} [{:^7}]|{}| {} [thread:{}]",
                         time_str,
                         fmt::styled(
                                 (
@@ -277,7 +279,7 @@ namespace hzd {
                                 ),
                                 (
                                         meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
-                                                                           fmt::bg(fmt::color::gray) :
+                                                                           fmt::bg(fmt::color::cyan) :
                                         meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
                                                                           fmt::bg(fmt::color::green) :
                                         meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
@@ -302,7 +304,7 @@ namespace hzd {
                                 ),
                                 (
                                         meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
-                                                                           fmt::bg(fmt::color::gray) :
+                                                                           fmt::bg(fmt::color::cyan) :
                                         meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
                                                                           fmt::bg(fmt::color::green) :
                                         meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
@@ -316,8 +318,8 @@ namespace hzd {
                                         fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
                                 )
                         ),
-                        meta.content,
                         fmt::styled(meta.channel->name, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::green)),
+                        meta.content,
                         tid
                 );
             }
@@ -356,6 +358,7 @@ namespace hzd {
 
     bool Mole::is_stop = false;
     bool Mole::is_enable = true;
+    bool Mole::is_console = true;
     std::unordered_map<std::string, Mole::Channel> Mole::channels;
     Mole::Chan Mole::chan(true);
     std::string Mole::prefix = "./";
@@ -431,9 +434,9 @@ namespace hzd {
 
     void Mole::save_prefix(const std::string &prefix_) { Mole::prefix = prefix_; }
 
-    void Mole::enable() { log(Level::SILENCE,"enable"); }
+    void Mole::enable(bool is_enable_) { is_enable_ ? log(Level::SILENCE,"enable") : log(Level::SILENCE,"disable"); }
 
-    void Mole::disable() { log(Level::SILENCE,"disable"); }
+    void Mole::console(bool is_console_) { is_console_ ? log(Level::SILENCE,"console=1") : log(Level::SILENCE,"console=0"); }
 
     void Mole::log(
             Mole::Level level,
