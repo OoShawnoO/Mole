@@ -39,7 +39,7 @@ target_include_directories(
 set_target_properties(
         Mole
         PROPERTIES
-        PUBLIC_HEADER include/Mole.h
+        PUBLIC_HEADER include/Mole.h include/fmt
 )
 
 install(
