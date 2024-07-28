@@ -39,7 +39,7 @@ target_include_directories(
 set_target_properties(
         Mole
         PROPERTIES
-        PUBLIC_HEADER include/Mole.h include/fmt
+        PUBLIC_HEADER   include/Mole.h
 )
 
 install(
@@ -50,6 +50,8 @@ install(
         LIBRARY DESTINATION lib/Mole
         PUBLIC_HEADER DESTINATION include/
 )
+
+install(DIRECTORY include/fmt DESTINATION include)
 
 install(
         EXPORT Mole

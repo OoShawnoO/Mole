@@ -21,3 +21,8 @@ if (EXISTS ${CMAKE_INSTALL_PREFIX}/include/Mole.h)
     file(REMOVE_RECURSE ${CMAKE_INSTALL_PREFIX}/include/Mole.h)
     message("delete header dir:${CMAKE_INSTALL_PREFIX}/include/Mole.h")
 endif ()
+
+if (EXISTS ${CMAKE_INSTALL_PREFIX}/include/fmt)
+    file(REMOVE_RECURSE ${CMAKE_INSTALL_PREFIX}/include/fmt)
+    message("delete header dir:${CMAKE_INSTALL_PREFIX}/include/fmt")
+endif ()
