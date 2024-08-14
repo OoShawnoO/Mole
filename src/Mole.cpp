@@ -293,31 +293,6 @@ namespace hzd {
                                         fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
                                 )
                         ),
-                        fmt::styled(
-                                (
-                                        meta.level == Mole::Level::TRACE ? "TRACE" :
-                                        meta.level == Mole::Level::INFO ? "INFO" :
-                                        meta.level == Mole::Level::DEBUG ? "DEBUG" :
-                                        meta.level == Mole::Level::WARN ? "WARN" :
-                                        meta.level == Mole::Level::ERROR ? "ERROR" :
-                                        meta.level == Mole::Level::FATAL ? "FATAL" : ""
-                                ),
-                                (
-                                        meta.level == Mole::Level::TRACE ? fmt::fg(fmt::color::black) |
-                                                                           fmt::bg(fmt::color::cyan) :
-                                        meta.level == Mole::Level::INFO ? fmt::fg(fmt::color::black) |
-                                                                          fmt::bg(fmt::color::green) :
-                                        meta.level == Mole::Level::DEBUG ? fmt::fg(fmt::color::black) |
-                                                                           fmt::bg(fmt::color::blue) :
-                                        meta.level == Mole::Level::WARN ? fmt::fg(fmt::color::black) |
-                                                                          fmt::bg(fmt::color::yellow) :
-                                        meta.level == Mole::Level::ERROR ? fmt::fg(fmt::color::black) |
-                                                                           fmt::bg(fmt::color::red) :
-                                        meta.level == Mole::Level::FATAL ? fmt::fg(fmt::color::black) |
-                                                                           fmt::bg(fmt::color::magenta) :
-                                        fmt::fg(fmt::color::black) | fmt::bg(fmt::color::white)
-                                )
-                        ),
                         fmt::styled(meta.channel->name, fmt::fg(fmt::color::black) | fmt::bg(fmt::color::green)),
                         meta.content,
                         tid

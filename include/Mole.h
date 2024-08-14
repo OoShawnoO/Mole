@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <string>
 
 namespace hzd {
 
@@ -170,7 +171,7 @@ namespace hzd {
     struct to_string_able {
     private:
         template<class U>
-        __attribute__((unused)) static auto
+        static auto
         has(int) -> decltype(std::to_string(std::declval<U>()), std::true_type()) { return {}; };
 
         template<class>
@@ -183,7 +184,7 @@ namespace hzd {
     struct is_string {
     private:
         template<class U>
-        __attribute__((unused)) static auto
+        static auto
         has(int) -> decltype(std::string(std::declval<U>()), std::true_type()) { return {}; };
 
         template<class>
