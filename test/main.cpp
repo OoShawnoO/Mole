@@ -23,5 +23,4 @@ int main() {
   MOLE_WARN("hello {}",world);
   MOLE_ERROR("hello {}",world);
   MOLE_FATAL("hello {}",world);
-
 }
