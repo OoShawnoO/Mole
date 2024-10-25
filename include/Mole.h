@@ -28,21 +28,28 @@ using int64_t = long;
 using uint8_t = unsigned char;
 using uint16_t = unsigned short;
 using uint32_t = unsigned int;
-using size_t = unsigned int;
+using size_t = unsigned long long;
 using ssize_t = long int;
 #ifdef MOLE_EXPORTS
 #define MOLE_API __declspec(dllexport)
 #else
 #define MOLE_API __declspec(dllimport)
 #endif // MOLE_EXPORTS
+#define FILENAME(x) (strrchr(x,'\\') ? strrchr(x,'\\')+1 : x)
 #else  // NOT WIN32 || _WIN32 end
 #define MOLE_API
+#define FILENAME(x) (strrchr(x, '/') ? strrchr(x, '/')+1 : x)
 #endif // WIN32 || _WIN32
 
 #define MB (1024*1024)  // M Bytes
 #define CACHE_BUF_SIZE (16 * MB)
 
 namespace internal {
+
+#if defined(WIN32) || defined(_WIN32)
+#pragma warning(push)
+#pragma warning(disable:4251)
+#endif
 
 template<class Tp>
 struct MOLE_API Chan {
@@ -146,6 +153,11 @@ class MOLE_API Mole {
   void writeMeta(Meta &&meta);
 
 };
+
+#if defined(WIN32) || defined(_WIN32)
+#pragma warning(pop)
+#endif
+
 #ifdef MOLE_IGNORE
 #define MOLE_TRACE(str,...)
 #define MOLE_DEBUG(str,...)
@@ -159,22 +171,22 @@ class MOLE_API Mole {
 #define MOLE_CONSOLE(is_console)
 #else
 #define MOLE_TRACE(str, ...) do { \
-  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kTRACE,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,__FILE__,{}}); \
+  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kTRACE,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,FILENAME(__FILE__),{}}); \
 }while(0)
 #define MOLE_DEBUG(str, ...) do { \
-  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kDEBUG,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,__FILE__,{}}); \
+  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kDEBUG,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,FILENAME(__FILE__),{}}); \
 }while(0)
 #define MOLE_INFO(str, ...) do { \
-  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kINFO,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,__FILE__,{}}); \
+  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kINFO,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,FILENAME(__FILE__),{}}); \
 }while(0)
 #define MOLE_WARN(str, ...) do { \
-  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kWARN,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,__FILE__,{}}); \
+  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kWARN,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,FILENAME(__FILE__),{}}); \
 }while(0)
 #define MOLE_ERROR(str, ...) do { \
-  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kERROR,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,__FILE__,{}}); \
+  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kERROR,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,FILENAME(__FILE__),{}}); \
 }while(0)
 #define MOLE_FATAL(str, ...) do { \
-  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kFATAL,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,__FILE__,{}}); \
+  hzd::Mole::Instance().Log(hzd::Mole::Meta{hzd::Mole::Level::kFATAL,hzd::Mole::Operation::kNONE,fmt::format(str,##__VA_ARGS__), {},__LINE__,FILENAME(__FILE__),{}}); \
 }while(0)
 #define MOLE_LEVEL(level) do { \
   hzd::Mole::Instance().LogFilter(level);\

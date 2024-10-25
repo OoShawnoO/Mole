@@ -37,12 +37,12 @@ endif ()
 # find_package()
 
 # executable
-add_executable(Mole.bin main.cpp)
+add_executable(Mole.test main.cpp)
 
 # include path
 # link libraries
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_link_libraries(Mole.bin Mole)
+    target_link_libraries(Mole.test Mole)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(Mole.bin Mole pthread)
+    target_link_libraries(Mole.test Mole pthread)
 endif()

@@ -7,21 +7,20 @@
   ******************************************************************************
   */
 
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#include <Windows.h>
+#endif
+
+#include "Mole.h"
+#include "fmt/color.h"
+
 #include <unordered_map>
 #include <regex>
 #include <utility>
 #include <iomanip>
 #include <iostream>
-#include "Mole.h"
-#include "fmt/color.h"
-
-#ifdef _WIN32
-#include <Windows.h>
-#include <iomanip>
 #include <sstream>
-#include <unordered_map>
-#include <regex>
-#endif
 
 namespace hzd {
 
@@ -38,7 +37,7 @@ static std::unordered_map<Mole::Level, std::string> level_map{
 static std::unordered_map<Mole::Level, fmt::color> color_schema{
     {Mole::Level::kSILENCE, fmt::color::green_yellow},
     {Mole::Level::kTRACE, fmt::color::cyan},
-    {Mole::Level::kDEBUG, fmt::color::blue},
+    {Mole::Level::kDEBUG, fmt::color::magenta},
     {Mole::Level::kINFO, fmt::color::green},
     {Mole::Level::kWARN, fmt::color::yellow},
     {Mole::Level::kERROR, fmt::color::red},

@@ -26,7 +26,7 @@ add_library(Mole.share SHARED ${SRC})
 add_subdirectory(test)
 
 add_custom_target(
-        uninstall
+        Mole.uninstall
         COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -P "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake"
 )
 
