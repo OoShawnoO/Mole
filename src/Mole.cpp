@@ -125,8 +125,6 @@ void Mole::writeMeta(Mole::Meta &&meta) {
           tid_stream.str()
       );
 
-      auto raw_str = std::regex_replace(styled_str, std::regex("\033\\[[0-9;]*m"), "");
-
       if (console_) {
         fmt::print(styled_str);
       }
@@ -142,7 +140,7 @@ void Mole::writeMeta(Mole::Meta &&meta) {
             return;
           }
         }
-
+        auto raw_str = std::regex_replace(styled_str, std::regex("\033\\[[0-9;]*m"), "");
         if (cursor + raw_str.size() >= CACHE_BUF_SIZE) {
           fwrite(buffer, cursor, 1, fp);
           buffer[0] = '\0';
@@ -179,7 +177,6 @@ void Mole::writeMeta(Mole::Meta &&meta) {
       if (save_path_ != meta.content) {
         if (fp) {
           fclose(fp);
-          fp = nullptr;
         }
         fp = fopen(meta.content.c_str(), "ab");
         if (!fp) {

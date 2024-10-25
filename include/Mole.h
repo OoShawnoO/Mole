@@ -39,68 +39,36 @@ using ssize_t = long int;
 #define MOLE_API
 #endif // WIN32 || _WIN32
 
-#define KB (1024)       // K Bytes
 #define MB (1024*1024)  // M Bytes
 #define CACHE_BUF_SIZE (16 * MB)
 
 namespace internal {
 
-struct MOLE_API Semaphore {
-  explicit Semaphore(ssize_t count = 0) : count_(count) {}
-  void Signal() {
-    std::unique_lock<std::mutex> guard(mutex_);
-    ++count_;
-    if (count_ >= 0) {
-      condition_variable_.notify_one();
-    }
-  }
-  void Wait() {
-    std::unique_lock<std::mutex> guard(mutex_);
-    --count_;
-    if (count_ < 0) {
-      condition_variable_.wait(guard);
-    }
-  }
-  void WakeAll() {
-    std::unique_lock<std::mutex> guard(mutex_);
-    ++count_;
-    if (count_ >= 0) {
-      condition_variable_.notify_all();
-    }
-  }
- private:
-  ssize_t count_;
-  std::mutex mutex_;
-  std::condition_variable condition_variable_;
-};
-
-template<class Tp, bool block = false>
+template<class Tp>
 struct MOLE_API Chan {
-  explicit Chan(size_t capacity = 128 * MB / sizeof(Tp)) : capacity_(capacity) {
-    if (block) {
-#ifdef _WIN32
-      up_semaphore_ = std::make_unique<Semaphore>(0);
-#elif defined __linux__
-      up_semaphore_.reset(new Semaphore(0));
-#endif
-    }
-  }
+  explicit Chan(size_t capacity = 128 * MB / sizeof(Tp), bool block = false)
+      : capacity_(capacity), block_(block) {}
 
   ~Chan() {
     Wake();
   }
 
   bool Push(Tp &&item) {
-    std::lock_guard<std::mutex> guard(mutex_);
-    if (container_.size() >= capacity_) return false;
+    std::unique_lock<std::mutex> guard(mutex_);
+    if (block_) {
+      condition_variable_.wait(guard, [this] { return container_.size() <= capacity_; });
+    }
+    if (container_.size() > capacity_) return false;
     container_.emplace_back(item);
-    if (up_semaphore_) { up_semaphore_->Signal(); }
+    condition_variable_.notify_one();
     return true;
   }
 
   bool Pop(Tp &item) {
-    if (up_semaphore_) { up_semaphore_->Wait(); }
-    std::lock_guard<std::mutex> guard(mutex_);
+    std::unique_lock<std::mutex> guard(mutex_);
+    if(block_) {
+      condition_variable_.wait(guard, [this] { return !this->container_.empty(); });
+    }
     if (container_.empty()) return false;
     item = std::move(container_.front());
     container_.pop_front();
@@ -108,19 +76,21 @@ struct MOLE_API Chan {
   }
 
   bool Empty() {
-    std::lock_guard<std::mutex> guard(mutex_);
+    std::unique_lock<std::mutex> guard(mutex_);
     return container_.empty();
   }
 
   void Wake() {
-    if (up_semaphore_) { up_semaphore_->WakeAll(); }
+    std::unique_lock<std::mutex> guard(mutex_);
+    condition_variable_.notify_all();
   }
 
  private:
+  bool block_;
   size_t capacity_;
   std::deque<Tp> container_;
   std::mutex mutex_;
-  std::unique_ptr<Semaphore> up_semaphore_;
+  std::condition_variable condition_variable_;
 };
 
 }
@@ -144,12 +114,12 @@ class MOLE_API Mole {
     time_point time{};
 
     explicit Meta(Level level = Level::kSILENCE,
-         Operation op = kNONE,
-         std::string content = "",
-         std::thread::id thread_id = {},
-         uint32_t line = 0,
-         const char *file = nullptr,
-         time_point time = {});
+                  Operation op = kNONE,
+                  std::string content = "",
+                  std::thread::id thread_id = {},
+                  uint32_t line = 0,
+                  const char *file = nullptr,
+                  time_point time = {});
   };
 
   Mole();
@@ -162,15 +132,15 @@ class MOLE_API Mole {
   static Mole &Instance();
 
  private:
-  bool enable_ = true, console_ = true, save_, stop_;
-  Level filter;
+  bool enable_ = true, console_ = true, save_ = false, stop_ = false;
+  Level filter{Level::kTRACE};
   std::thread thread_{loop, this};
   internal::Chan<Meta> meta_chan_;
 
   std::string save_path_;
-  FILE *fp;
-  char buffer[CACHE_BUF_SIZE];
-  size_t cursor;
+  FILE *fp{};
+  char buffer[CACHE_BUF_SIZE]{};
+  size_t cursor{};
 
   static void loop(Mole *mole);
   void writeMeta(Meta &&meta);
@@ -212,7 +182,7 @@ class MOLE_API Mole {
 #define MOLE_ENABLE(is_enable) do { \
   hzd::Mole::Instance().Enable(is_enable);\
 }while(0)
-#define MOLE_SAVE(is_save,...) do { \
+#define MOLE_SAVE(is_save, ...) do { \
   hzd::Mole::Instance().Save(is_save,##__VA_ARGS__);\
 }while(0)
 #define MOLE_CONSOLE(is_console) do { \
