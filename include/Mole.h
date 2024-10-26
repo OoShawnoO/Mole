@@ -17,6 +17,7 @@
 #include <thread>
 
 #include "fmt/format.h"
+#include "concurrent/blockingconcurrentqueue.h"
 
 namespace hzd {
 
@@ -43,67 +44,13 @@ using ssize_t = long int;
 
 #define MB (1024*1024)  // M Bytes
 #define CACHE_BUF_SIZE (16 * MB)
-
-namespace internal {
-
-#if defined(WIN32) || defined(_WIN32)
-#pragma warning(push)
-#pragma warning(disable:4251)
-#endif
-
-template<class Tp>
-struct MOLE_API Chan {
-  explicit Chan(size_t capacity = 128 * MB / sizeof(Tp), bool block = false)
-      : capacity_(capacity), block_(block) {}
-
-  ~Chan() {
-    Wake();
-  }
-
-  bool Push(Tp &&item) {
-    std::unique_lock<std::mutex> guard(mutex_);
-    if (block_) {
-      condition_variable_.wait(guard, [this] { return container_.size() <= capacity_; });
-    }
-    if (container_.size() > capacity_) return false;
-    container_.emplace_back(item);
-    condition_variable_.notify_one();
-    return true;
-  }
-
-  bool Pop(Tp &item) {
-    std::unique_lock<std::mutex> guard(mutex_);
-    if(block_) {
-      condition_variable_.wait(guard, [this] { return !this->container_.empty(); });
-    }
-    if (container_.empty()) return false;
-    item = std::move(container_.front());
-    container_.pop_front();
-    return true;
-  }
-
-  bool Empty() {
-    std::unique_lock<std::mutex> guard(mutex_);
-    return container_.empty();
-  }
-
-  void Wake() {
-    std::unique_lock<std::mutex> guard(mutex_);
-    condition_variable_.notify_all();
-  }
-
- private:
-  bool block_;
-  size_t capacity_;
-  std::deque<Tp> container_;
-  std::mutex mutex_;
-  std::condition_variable condition_variable_;
-};
-
-}
+#define META_BULK_SIZE 16
 
 class MOLE_API Mole {
  public:
+  template<class T>
+  using Chan = moodycamel::BlockingConcurrentQueue<T>;
+
   enum class Level : uint32_t {
     kTRACE = 0, kINFO, kDEBUG, kWARN, kERROR, kFATAL, kSILENCE,
   };
@@ -142,7 +89,7 @@ class MOLE_API Mole {
   bool enable_ = true, console_ = true, save_ = false, stop_ = false;
   Level filter{Level::kTRACE};
   std::thread thread_{loop, this};
-  internal::Chan<Meta> meta_chan_;
+  Chan<Meta> meta_chan_;
 
   std::string save_path_;
   FILE *fp{};

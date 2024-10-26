@@ -50,7 +50,6 @@ Mole::Mole() {
 
 Mole::~Mole() {
   stop_ = true;
-  meta_chan_.Wake();
   thread_.join();
 }
 
@@ -58,7 +57,7 @@ void Mole::Log(Mole::Meta &&meta) {
   if (!enable_ || meta.op == kNONE && meta.level < filter) return;
   meta.time = std::chrono::system_clock::now();
   meta.thread_id = std::this_thread::get_id();
-  meta_chan_.Push(std::move(meta));
+  meta_chan_.enqueue(std::move(meta));
 }
 void Mole::Enable(bool is_enable) {
   Log(Meta{Level::kSILENCE, is_enable ? Operation::kENABLE : Operation::kDISABLE});
@@ -81,15 +80,18 @@ void Mole::loop(Mole *m) {
   dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
   SetConsoleMode(hOut, dwMode);
 #endif
-  Meta meta;
+  Meta meta[META_BULK_SIZE];
+  size_t num_read;
   Mole &mole = *m;
   while (!mole.stop_) {
-    if (!mole.meta_chan_.Pop(meta)) { continue; }
-    mole.writeMeta(std::move(meta));
+    if ((num_read = mole.meta_chan_.try_dequeue_bulk(meta, META_BULK_SIZE)) == 0) { continue; }
+    for (size_t index = 0; index < num_read; ++index) {
+      mole.writeMeta(std::move(meta[index]));
+    }
   }
-  while (!mole.meta_chan_.Empty()) {
-    if (mole.meta_chan_.Pop(meta)) {
-      mole.writeMeta(std::move(meta));
+  while ((num_read = mole.meta_chan_.try_dequeue_bulk(meta, META_BULK_SIZE)) != 0) {
+    for (size_t index = 0; index < num_read; ++index) {
+      mole.writeMeta(std::move(meta[index]));
     }
   }
   if (mole.fp) {
